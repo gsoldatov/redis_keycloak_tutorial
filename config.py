@@ -18,6 +18,14 @@ class KeycloakConfig(BaseModel):
     app_client_id: str = Field(min_length=1)
     app_client_secret: str = Field(min_length=1)
 
+    @property
+    def keycloak_url(self) -> str:
+        return f"http://localhost:{self.container_main_port}"
+    
+    @property
+    def keycloak_healthcheck_url(self) -> str:
+        return f"http://localhost:{self.container_healthcheck_port}/health/ready"
+
 
 class Config(BaseModel):
     keycloak: KeycloakConfig

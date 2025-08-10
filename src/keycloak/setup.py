@@ -56,7 +56,7 @@ class KeycloakManager:
     def __init__(self, kc_config: KeycloakConfig):
         self.kc_config = kc_config
         self.admin = KeycloakAdmin(
-            server_url=f"http://localhost:{kc_config.container_main_port}",
+            server_url=kc_config.keycloak_url,
             username=kc_config.admin_username,
             password=kc_config.admin_password,
             realm_name="master"
@@ -69,11 +69,10 @@ class KeycloakManager:
         Throws if maximum amount of endpoint calls is exceeded
         """
         retries = -1
-        url = f"http://localhost:{self.kc_config.container_healthcheck_port}/health/ready"
 
         while retries < self.kc_config.max_healthcheck_retries:
             try:
-                result = httpx.get(url=url, timeout=self.kc_config.healthcheck_retry_timeout)
+                result = httpx.get(url=self.kc_config.keycloak_healthcheck_url, timeout=self.kc_config.healthcheck_retry_timeout)
                 if result.status_code == 200: return
                 else: retries += 1
             except (TimeoutError, httpx.RemoteProtocolError) as e:

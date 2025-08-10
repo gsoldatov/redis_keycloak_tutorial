@@ -36,7 +36,7 @@ def get_keycloak_container_manager(
             "start-dev",
             
             # Enable custom port usage on Keycloak side
-            f"--hostname", f"http://localhost:{kc_config.container_main_port}",
+            f"--hostname", kc_config.keycloak_url,
         ],
         debug=debug
     )
