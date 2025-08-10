@@ -1,0 +1,46 @@
++ KeyCloak container:
+    + pass params from configuration;
+    + setup programmatically:
+        ++ add & delete app realm;
+        ++ add & delete client;
+        ++ add & delete roles;
+        ++ add & delete users;
+    + ensure realm & user configuration persists container being stopped;
+    x add healthcheck to docker run command to check if container is up;
+    + expose healthcheck port;
+
++ CLI utility for containers:
+    + run:
+        + runs Keycloak container;
+        + performs initial configuration of keycloak;
+    + stop:
+        + stops Keycloak container;
+    + remove:
+        + removes Keycloak container;
+
+- web app:
+    - auth routes:
+        ? register;
+        - login;
+        - logout;
+    - app routes:
+        - public;
+        - protected (2 scopes);
+
+- Redis cache:
+    - add tokens on login;
+    - invalidate tokens on logout or expiry;
+    - refresh tokens on valid route calls;
+
+- CLI utility for contains:
+    - add Redis container management;
+
+- tests:
+    - mocks:
+        - test config;
+        - test containers:
+            ? use dev containers with temp databases & realms;
+        - app & client;
+    
+    - tests:
+        ???
