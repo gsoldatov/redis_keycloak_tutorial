@@ -166,7 +166,13 @@ class KeycloakManager:
                 "type": "password",
                 "value": password,
                 "temporary": False
-            }]
+            }],
+
+            # Additional attributes, which are required for account setup
+            "firstName": f"{username} first name",
+            "lastName": f"{username} last name",
+            "email": f"{username}@example.com",
+            "emailVerified": True
         })
 
         if app_client_roles:
