@@ -1,4 +1,4 @@
-from util.container_manager import ContainerManager
+from src.util.container_manager import ContainerManager
 
 from config import KeycloakConfig
 
