@@ -16,8 +16,8 @@ async def login(
     keycloak_client: Annotated[KeycloakClient, Depends(get_keycloak_client)]
 ):
     try:
-        token = await keycloak_client.login(credentials.username, credentials.password)
-        return {"token": token}
+        tokens = await keycloak_client.login(credentials.username, credentials.password)
+        return {"access_token": tokens["access_token"]}
     except AuthException:
         raise HTTPException(status_code=401)
     except NetworkException:
