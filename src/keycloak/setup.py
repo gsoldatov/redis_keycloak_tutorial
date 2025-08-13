@@ -153,7 +153,13 @@ class KeycloakManager:
         self.admin.delete_client_role(self.app_client_id, role_name)
 
     @in_app_realm
-    def add_user(self, username: str, password: str, app_client_roles: list[str]) -> str:
+    def add_user(
+        self,
+        username: str,
+        password: str,
+        app_client_roles: list[str],
+        enabled: bool = True
+    ) -> str:
         """
         Creates a user in the app realm with the given attributes.
         Assigns client roles to the user.
@@ -161,7 +167,7 @@ class KeycloakManager:
         """
         user_id = self.admin.create_user({
             "username": username,
-            "enabled": True,
+            "enabled": enabled,
             "credentials": [{
                 "type": "password",
                 "value": password,
@@ -197,6 +203,17 @@ class KeycloakManager:
     def delete_user(self, user_id: str) -> None:
         """ Deletes a user with the given `user_id` in the app realm. """
         self.admin.delete_user(user_id)
+
+    @in_app_realm
+    def delete_users(self) -> None:
+        """ Deletes all users in the app realm. """
+        for user in self.admin.get_users():
+            self.admin.delete_user(user["id"])
+    
+    @in_app_realm
+    def get_user_sessions(self, user_id: str) -> list[dict]:
+        return self.admin.get_sessions(user_id)
+
 
 # TODO delete
 if __name__ == "__main__":
