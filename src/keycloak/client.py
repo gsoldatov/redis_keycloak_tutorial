@@ -1,3 +1,5 @@
+import json
+
 from keycloak import KeycloakOpenID
 from keycloak.exceptions import KeycloakAuthenticationError, KeycloakPostError, \
     KeycloakConnectionError
@@ -25,9 +27,23 @@ class KeycloakClient:
         except (KeycloakConnectionError,) as e:
             raise NetworkException from e
     
-    async def logout(self, token: dict):
-        await self.client.a_logout(token["refresh_token"])
+    async def logout(self, refresh_token: str):
+        try:
+            await self.client.a_logout(refresh_token)
+        except (KeycloakConnectionError,) as e:
+            raise NetworkException from e
+        except KeycloakPostError as e:
+            try:
+                error_json = json.loads(e.error_message)
+                if error_json.get("error", None) == "invalid_grant":
+                    pass    # ignore invalid refresh tokens
+                else:
+                    raise
+            except:
+                raise e
+
 
     async def validate_token(self, token: dict):
         pass
+        # await self.client.a_decode_token()
         # await self.client.a_introspect()

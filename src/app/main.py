@@ -9,12 +9,15 @@ from typing import AsyncIterator
 
 from config import load_config, Config
 from src.app.routes import router
+from src.app.tokens import TokenCache
 
 
 def get_lifespan(config: Config):
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.config = config
+        app.state.token_cache = TokenCache()
+        """ Refresh tokens store. """
         yield
     return lifespan
 
