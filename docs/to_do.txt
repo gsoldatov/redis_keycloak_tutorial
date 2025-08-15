@@ -20,16 +20,16 @@
 
 - web app:
     - auth routes:
-        - login:
-            - gets a new token from Keycloak & returns it;
-            - handles network errors;
-            - handles incorrect credentials;
-            ? limit scope to app_client;
+        + login:
+            + gets a new token from Keycloak & returns it;
+            + handles network errors;
+            + handles incorrect credentials;
         - logout;
     - app routes:
-        - protected (2 scopes);
+        - protected (first role);
+        - protected (second role);
 
-- tests:
++ tests:
     + fixtures:
         + config;
         + KC container;
@@ -39,22 +39,24 @@
         + async test client (app without cache);
         + async test client (app without cache & with "disabled" keycloak); # or override dependency KC service dependency
     
-    - tests:
+    + tests:
         + login:
             + validation;
             + network error;
             + disabled user;
             + invalid credentials;
             + successful login;
-        - logout:
-            - network error;
-            - missing token;
-            - invalid token:
-                - wrong format;
-                ? add a role, which does not exist;
-            - expired token;
-            ? token of a disabled user;
-            - successful logout;
+        + logout:
+            + network error;
+            + missing token;
+            + invalid token:
+                + wrong format;
+                x add a role, which does not exist;
+            + expired token;
+            x token of a disabled user;
+            + successful logout;
+
+? limit scope to app_client when logging in;
 
 - Redis cache:
     - add tokens on login;

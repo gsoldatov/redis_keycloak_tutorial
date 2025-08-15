@@ -1,12 +1,12 @@
 """
-/login route validation tests.
+/login route tests.
 """
 if __name__ == "__main__":
     import os, sys
     sys.path.insert(0, os.path.abspath(os.path.join(__file__, "../" * 4)))
-    print(sys.path[0])
     from tests.util import run_pytest_tests
 
+from fastapi import FastAPI
 from httpx import AsyncClient
 
 from src.keycloak.setup import KeycloakManager
@@ -62,6 +62,7 @@ async def test_invalid_credentials(
 
 async def test_successful_login(
     cli_no_cache: AsyncClient,
+    app_no_cache: FastAPI,
     data_generator: DataGenerator,
     keycloak_manager: KeycloakManager
 ):
@@ -72,9 +73,14 @@ async def test_successful_login(
     body = data_generator.auth.get_login_credentials_request_body()
     resp = await cli_no_cache.post("/login", json=body)
     assert resp.status_code == 200
+    data = resp.json()
+    access_token = data["access_token"]
 
     # Check if a session was created
     assert len(keycloak_manager.get_user_sessions(user_id)) == 1
+
+    # Check if access/refresh token was cached
+    assert app_no_cache.state.token_cache.contains(access_token)
 
 
 if __name__ == "__main__":

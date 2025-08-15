@@ -5,6 +5,9 @@ class AuthGenerator:
         password: str = "password"
     ):
         return {"username": username, "password": password}
+    
+    def get_bearer_header(self, token: str) -> dict[str, str]:
+        return {"Authorization": f"Bearer {token}"}
         
 
 class DataGenerator:

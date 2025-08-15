@@ -110,37 +110,40 @@ def anyio_backend():
 
 
 @pytest.fixture
-async def cli_no_cache_and_kc(
-        anyio_backend,
-        config_with_unavailable_keycloak_and_cache
-    ):
+def app_no_cache_and_kc(anyio_backend, config_with_unavailable_keycloak_and_cache):
+    return create_app(config_with_unavailable_keycloak_and_cache) 
+
+
+@pytest.fixture
+async def cli_no_cache_and_kc(app_no_cache_and_kc):
     """
     Yields a test client for the application.
     Keycloak and Redis ports are set to incorrect values
     to simulate their unavailability.
     """
-    app = create_app(config_with_unavailable_keycloak_and_cache)
     # Enable app's lifespan events in test environment
     # https://fastapi.tiangolo.com/advanced/async-tests
-    async with LifespanManager(app) as manager:
+    async with LifespanManager(app_no_cache_and_kc) as manager:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=manager.app), base_url="http://test"
         ) as async_client:
             yield async_client
+
+@pytest.fixture
+def app_no_cache(anyio_backend, test_config):
+    return create_app(test_config)
 
 
 @pytest.fixture
 async def cli_no_cache(
-        anyio_backend,
-        test_config,
-        keycloak_manager
+        app_no_cache,
+        keycloak_manager # wait for KC container
     ):
     """ Yields a test client for the application without cache enabled. """
-    app = create_app(test_config)
     # Enable app's lifespan events in test environment
     # https://fastapi.tiangolo.com/advanced/async-tests
-    async with LifespanManager(app) as manager:
+    async with LifespanManager(app_no_cache) as manager:
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=manager.app), base_url="http://test"
         ) as async_client:
             yield async_client

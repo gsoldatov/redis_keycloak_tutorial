@@ -213,6 +213,11 @@ class KeycloakManager:
     @in_app_realm
     def get_user_sessions(self, user_id: str) -> list[dict]:
         return self.admin.get_sessions(user_id)
+    
+    @in_app_realm
+    def delete_user_sessions(self, user_id: str) -> None:
+        """ Invalidates all session of a user with `user_id`. """
+        self.admin.user_logout(user_id)
 
 
 # TODO delete

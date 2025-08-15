@@ -4,7 +4,6 @@
 if __name__ == "__main__":
     import os, sys
     sys.path.insert(0, os.path.abspath(os.path.join(__file__, "../" * 4)))
-    print(sys.path[0])
     from tests.util import run_pytest_tests
 
 from httpx import AsyncClient
