@@ -35,8 +35,8 @@ def config_with_unavailable_keycloak_and_cache(config: Config) -> Config:
 
 
 @pytest.fixture(scope="session")
-def keycloak_container(config):
-    manager = get_keycloak_container_manager(config, True)
+def keycloak_container(config: Config):
+    manager = get_keycloak_container_manager(config.keycloak, True)
     if not manager.is_running():
         manager.run()
         yield
@@ -86,7 +86,7 @@ def test_keycloak_realm_and_manager(test_config: Config):
 
 ############ Function fixtures ############
 @pytest.fixture
-def keycloak_manager(test_keycloak_realm_and_manager: KeycloakManager):
+def keycloak_manager(test_keycloak_realm_and_manager: KeycloakManager, keycloak_ready):
     """ Yields KeycloakManager for test realm & cleans up the realm after each test. """
     yield test_keycloak_realm_and_manager
 
