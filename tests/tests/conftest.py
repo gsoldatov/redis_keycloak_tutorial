@@ -91,7 +91,7 @@ def keycloak_manager(test_keycloak_realm_and_manager: KeycloakManager, keycloak_
     yield test_keycloak_realm_and_manager
 
     # Delete existing users in the test realm
-    test_keycloak_realm_and_manager.delete_users()
+    test_keycloak_realm_and_manager.delete_all_users()
 
 
 @pytest.fixture

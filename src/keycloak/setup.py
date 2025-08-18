@@ -21,7 +21,7 @@ from config import KeycloakConfig
 def reset_keycloak_app_realm(kc_config: KeycloakConfig):
     """
     Deletes existing app realm, creates a new one 
-    and adds app client, roles and test users into it.
+    and adds app client & roles into it.
     """
     with KeycloakManager(kc_config) as manager:
         manager.delete_app_realm()
@@ -31,6 +31,11 @@ def reset_keycloak_app_realm(kc_config: KeycloakConfig):
         manager.add_client_role("role-1")
         manager.add_client_role("role-2")
 
+
+def reset_keycloak_app_realm_users(kc_config: KeycloakConfig):
+    """ Creates or replaces test users in the app realm. """
+    with KeycloakManager(kc_config) as manager:
+        manager.delete_users(["user-1", "user-2", "superuser"])
         user_1_id = manager.add_user("user-1", "password", ["role-1"])
         user_2_id = manager.add_user("user-2", "password", ["role-2"])
         superuser_id = manager.add_user("superuser", "password", ["role-1", "role-2"])
@@ -44,6 +49,13 @@ def in_app_realm(fn):
     @wraps(fn)
     def inner(self: "KeycloakManager", *args, **kwargs) -> Any:
         current_realm = self.admin.get_current_realm()
+
+        # Ensure admin tokens are issued, while master realm is selected
+        # (connecting to app realm before tokens are obtained results in auth failure (due to invalid user credentials))
+        if self.admin.connection.token is None:
+            self.admin.change_current_realm("master")
+            self.admin.connection._refresh_if_required()
+
         self.admin.change_current_realm(self.kc_config.app_realm_name)
         result = fn(self, *args, **kwargs)
         self.admin.change_current_realm(current_realm)
@@ -203,9 +215,17 @@ class KeycloakManager:
     def delete_user(self, user_id: str) -> None:
         """ Deletes a user with the given `user_id` in the app realm. """
         self.admin.delete_user(user_id)
+    
+    @in_app_realm
+    def delete_users(self, usernames: list[str]) -> None:
+        """ Deletes users with provided `usernames`, if they exist. """
+        for username in usernames:
+            users = self.admin.get_users({"username": username})
+            if users:
+                self.admin.delete_user(users[0]["id"])
 
     @in_app_realm
-    def delete_users(self) -> None:
+    def delete_all_users(self) -> None:
         """ Deletes all users in the app realm. """
         for user in self.admin.get_users():
             self.admin.delete_user(user["id"])
