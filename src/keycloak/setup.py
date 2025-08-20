@@ -144,6 +144,16 @@ class KeycloakManager:
         })
     
     @in_app_realm
+    def get_app_client(self) -> dict:
+        """ Returns current settings of the app client. """
+        return self.admin.get_client(self.app_client_id)
+    
+    @in_app_realm
+    def update_app_client(self, new_props: dict) -> None:
+        """ Updates app client with `new_props`. """
+        self.admin.update_client(self.app_client_id, new_props)
+    
+    @in_app_realm
     def delete_app_client(self) -> None:
         """Deletes app client in the app realm."""
         self.admin.delete_client(self.app_client_id)

@@ -52,13 +52,6 @@ def keycloak_container(config: Config):
         yield
 
 
-@pytest.fixture(scope="session")
-def keycloak_ready(config: Config, keycloak_container):
-    """ Ensure Keycloak container is ready. """
-    manager = KeycloakManager(config.keycloak)
-    manager.wait_for_server()
-
-
 ############ Module fixtures ############
 @pytest.fixture(scope="module")
 def test_config(config: Config) -> Config:
@@ -69,29 +62,47 @@ def test_config(config: Config) -> Config:
 
 
 @pytest.fixture(scope="module")
-def test_keycloak_realm_and_manager(test_config: Config):
-    """ Setup test Keycloak realm (also check that container is ready). """
+def keycloak_manager(test_config: Config):
+    """ Wait for Keycloak to be ready & yield a KeycloakManager instance. """
     with KeycloakManager(test_config.keycloak) as manager:
-        manager.delete_app_realm()
-
-        manager.create_app_realm()
-        manager.create_app_client()
-        manager.add_client_role("role-1")
-        manager.add_client_role("role-2")
-
         yield manager
-        
-        manager.delete_app_realm()
+
+
+@pytest.fixture(scope="module")
+def test_keycloak_realm(
+    test_config: Config,
+    keycloak_manager: KeycloakManager
+):
+    """ Setup & teardown test Keycloak realm and return default configuration. """
+    keycloak_manager.delete_app_realm()
+
+    keycloak_manager.create_app_realm()
+    keycloak_manager.create_app_client()
+    keycloak_manager.add_client_role("role-1")
+    keycloak_manager.add_client_role("role-2")
+
+    client_representtation = keycloak_manager.get_app_client()
+
+    yield (client_representtation, )
+    
+    keycloak_manager.delete_app_realm()
 
 
 ############ Function fixtures ############
 @pytest.fixture
-def keycloak_manager(test_keycloak_realm_and_manager: KeycloakManager, keycloak_ready):
-    """ Yields KeycloakManager for test realm & cleans up the realm after each test. """
-    yield test_keycloak_realm_and_manager
+def restore_keycloak_configuration(
+    test_keycloak_realm: tuple,
+    keycloak_manager: KeycloakManager
+    
+):
+    """ Restores realm configuration after each test. """
+    yield
 
     # Delete existing users in the test realm
-    test_keycloak_realm_and_manager.delete_all_users()
+    keycloak_manager.delete_all_users()
+
+    # Restore client state
+    keycloak_manager.update_app_client(test_keycloak_realm[0])
 
 
 @pytest.fixture
@@ -137,7 +148,7 @@ def app_no_cache(anyio_backend, test_config):
 @pytest.fixture
 async def cli_no_cache(
         app_no_cache,
-        keycloak_manager # wait for KC container
+        restore_keycloak_configuration
     ):
     """ Yields a test client for the application without cache enabled. """
     # Enable app's lifespan events in test environment
