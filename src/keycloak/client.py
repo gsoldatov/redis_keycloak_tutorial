@@ -42,8 +42,27 @@ class KeycloakClient:
             except:
                 raise e
 
+    async def introspect_token(self, access_token: str) -> dict:
+        """ Introspects the `access_token` and returns the introspection results. """
+        try:
+            return await self.client.a_introspect(access_token)
+        except KeycloakConnectionError as e:
+            raise NetworkException from e
 
-    async def validate_token(self, token: dict):
-        pass
-        # await self.client.a_decode_token()
-        # await self.client.a_introspect()
+    async def refresh_token(self, refresh_token: str) -> dict:
+        """ Refreshes access token using `refresh_token`. Returns new tokens. """
+        try:
+            return await self.client.a_refresh_token(refresh_token)
+        except (KeycloakConnectionError,) as e:
+            raise NetworkException from e
+        except (KeycloakAuthenticationError, KeycloakPostError) as e:
+            raise AuthException from e
+
+    async def decode_token(self, access_token: str) -> dict:
+        """ Decodes the access token and returns its contents. """
+        try:
+            return await self.client.a_decode_token(access_token)
+        except KeycloakConnectionError as e:
+            raise NetworkException from e
+        except (KeycloakAuthenticationError, KeycloakPostError) as e:
+            raise AuthException from e

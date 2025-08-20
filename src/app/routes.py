@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 
-from src.app.dependencies import get_keycloak_client, get_bearer_token, get_token_cache
+from src.app.dependencies import get_keycloak_client, get_bearer_token, get_token_cache, validate_token_role
 from src.exceptions import AuthException, NetworkException
 from src.app.models import UserCredentials
 from src.app.tokens import TokenCache
@@ -34,7 +34,7 @@ async def logout(
     token_cache: Annotated[TokenCache, Depends(get_token_cache)]
 ):
     if access_token is None:
-        raise HTTPException(status_code=403, detail="Missing or incorrectly formatted bearer token.")
+        raise HTTPException(status_code=403, detail="Missing bearer token.")
 
     refresh_token = token_cache.get(access_token)
     if refresh_token is None:
@@ -48,11 +48,15 @@ async def logout(
         raise HTTPException(status_code=503)
 
 
-@router.get("/protected/1")
-async def protected_first():
-    pass
+@router.get("/protected/first")
+async def protected_first(
+    valid_token: Annotated[None, Depends(validate_token_role("role-1"))]
+):
+    return {"value": 1}
 
 
-@router.get("/protected/2")
-async def protected_second():
-    pass
+@router.get("/protected/second")
+async def protected_second(
+    valid_token: Annotated[None, Depends(validate_token_role("role-2"))]
+):
+    return {"value": 2}

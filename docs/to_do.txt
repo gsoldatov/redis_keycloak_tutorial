@@ -18,16 +18,16 @@
     + remove:
         + removes Keycloak container;
 
-- web app:
-    - auth routes:
++ web app:
+    + auth routes:
         + login:
             + gets a new token from Keycloak & returns it;
             + handles network errors;
             + handles incorrect credentials;
-        - logout;
-    - app routes:
-        - protected (first role);
-        - protected (second role);
+        + logout;
+    + app routes:
+        + protected (first role);
+        + protected (second role);
 
 + tests:
     + fixtures:
@@ -55,8 +55,24 @@
             + expired token;
             x token of a disabled user;
             + successful logout;
+        + first protected route:
+            + network error when validating token;
+            + missing token;
+            + invalid token format;
+            + expired token;
+            + token without required role;
+            + valid request with a correct token;
+            + valid request with a refreshed token;
+        + second protected route:
+            + network error when validating token;
+            + missing token;
+            + invalid token format;
+            + expired token;
+            + token without required role;
+            + valid request with a correct token;
+            + valid request with a refreshed token;
 
-? limit scope to app_client when logging in;
+x limit scope to app_client when logging in;
 
 - Redis cache:
     - add tokens on login;
