@@ -1,19 +1,9 @@
 from functools import wraps
 from time import sleep
+from typing import Self, Any
 
 from keycloak import KeycloakAdmin
 import httpx
-
-from typing import Self, Any
-
-# TODO delete
-if __name__ == "__main__":
-    from pathlib import Path
-    import sys
-    project_root = Path(__file__).parent.parent.parent
-    sys.path.insert(0, str(project_root))
-
-    from config import load_config
 
 from config import KeycloakConfig
 
@@ -248,10 +238,3 @@ class KeycloakManager:
     def delete_user_sessions(self, user_id: str) -> None:
         """ Invalidates all session of a user with `user_id`. """
         self.admin.user_logout(user_id)
-
-
-# TODO delete
-if __name__ == "__main__":
-    from config import load_config
-    config = load_config()
-    reset_keycloak_app_realm(config.keycloak)
