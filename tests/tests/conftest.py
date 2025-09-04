@@ -62,7 +62,7 @@ def test_config(config: Config) -> Config:
 
 
 @pytest.fixture(scope="module")
-def keycloak_manager(test_config: Config):
+def keycloak_manager(test_config: Config, keycloak_container: None):
     """ Wait for Keycloak to be ready & yield a KeycloakManager instance. """
     with KeycloakManager(test_config.keycloak) as manager:
         yield manager
