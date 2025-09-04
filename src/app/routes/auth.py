@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 
-from src.app.dependencies import get_keycloak_client, get_bearer_token, get_token_cache, validate_token_role
+from src.app.dependencies import get_keycloak_client, get_bearer_token, get_token_cache
 from src.exceptions import AuthException, NetworkException
 from src.app.models import UserCredentials
 from src.app.tokens import TokenCache
 from src.keycloak.client import KeycloakClient
 
 
-router = APIRouter()
+auth_router = APIRouter(prefix="/auth")
 
 
-@router.post("/login")
+@auth_router.post("/login")
 async def login(
     credentials: UserCredentials,
     keycloak_client: Annotated[KeycloakClient, Depends(get_keycloak_client)],
@@ -27,7 +27,7 @@ async def login(
         raise HTTPException(status_code=503)
 
 
-@router.post("/logout")
+@auth_router.post("/logout")
 async def logout(
     access_token: Annotated[str, Depends(get_bearer_token)],
     keycloak_client: Annotated[KeycloakClient, Depends(get_keycloak_client)],
@@ -46,17 +46,3 @@ async def logout(
         raise HTTPException(status_code=204)
     except NetworkException:
         raise HTTPException(status_code=503)
-
-
-@router.get("/protected/first")
-async def protected_first(
-    valid_token: Annotated[None, Depends(validate_token_role("role-1"))]
-):
-    return {"value": 1}
-
-
-@router.get("/protected/second")
-async def protected_second(
-    valid_token: Annotated[None, Depends(validate_token_role("role-2"))]
-):
-    return {"value": 2}

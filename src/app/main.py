@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from typing import AsyncIterator
 
 from config import load_config, Config
-from src.app.routes import router
+from src.app.routes import setup_routes
 from src.app.tokens import TokenCache
 
 
@@ -24,7 +24,7 @@ def get_lifespan(config: Config):
 
 def create_app(config: Config) -> FastAPI:
     app = FastAPI(lifespan=get_lifespan(config))
-    app.include_router(router, prefix="")
+    setup_routes(app)
     return app
 
 

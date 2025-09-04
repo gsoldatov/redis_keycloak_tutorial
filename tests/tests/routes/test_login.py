@@ -1,5 +1,5 @@
 """
-/login route tests.
+/auth/login route tests.
 """
 if __name__ == "__main__":
     import os, sys
@@ -20,7 +20,7 @@ async def test_network_error(
     # Try to log in, while Keycloak "is unavailable"
     # (by using an app with a wrong Keycloak port)
     body = data_generator.auth.get_login_credentials_request_body()
-    resp = await cli_no_cache_and_kc.post("/login", json=body)
+    resp = await cli_no_cache_and_kc.post("/auth/login", json=body)
     assert resp.status_code == 503
 
 
@@ -34,7 +34,7 @@ async def test_disabled_user(
 
     # Try to log in as a diabled user
     body = data_generator.auth.get_login_credentials_request_body()
-    resp = await cli_no_cache.post("/login", json=body)
+    resp = await cli_no_cache.post("/auth/login", json=body)
     assert resp.status_code == 401
 
     # Check if a session was not created
@@ -53,7 +53,7 @@ async def test_invalid_credentials(
     for attr, value in [("username", "incorrect"), ("password", "incorrect")]:
         body = data_generator.auth.get_login_credentials_request_body()
         body[attr] = value
-        resp = await cli_no_cache.post("/login", json=body)
+        resp = await cli_no_cache.post("/auth/login", json=body)
         assert resp.status_code == 401
 
     # Check if a session was not created
@@ -71,7 +71,7 @@ async def test_successful_login(
 
     # Try to log in
     body = data_generator.auth.get_login_credentials_request_body()
-    resp = await cli_no_cache.post("/login", json=body)
+    resp = await cli_no_cache.post("/auth/login", json=body)
     assert resp.status_code == 200
     data = resp.json()
     access_token = data["access_token"]

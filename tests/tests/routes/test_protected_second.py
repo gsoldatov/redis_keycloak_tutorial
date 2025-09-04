@@ -1,5 +1,5 @@
 """
-/protected/second route tests.
+/protected_test/second route tests.
 """
 if __name__ == "__main__":
     import os, sys
@@ -26,14 +26,14 @@ async def test_network_error(
     # Try to access route, while Keycloak "is unavailable"
     # (by using an app with a wrong Keycloak port)
     headers = data_generator.auth.get_bearer_header(tokens["access_token"])
-    resp = await cli_no_cache_and_kc.get("/protected/second", headers=headers)
+    resp = await cli_no_cache_and_kc.get("/protected_test/second", headers=headers)
     assert resp.status_code == 503
 
 
 async def test_missing_authorization_header(
     cli_no_cache_and_kc: AsyncClient
 ):
-    resp = await cli_no_cache_and_kc.get("/protected/second")
+    resp = await cli_no_cache_and_kc.get("/protected_test/second")
     assert resp.status_code == 401
 
 
@@ -41,7 +41,7 @@ async def test_invalid_authorization_header_format(
     cli_no_cache_and_kc: AsyncClient
 ):
     headers = {"Authorization": "incorrect bearer token"}
-    resp = await cli_no_cache_and_kc.get("/protected/second", headers=headers)
+    resp = await cli_no_cache_and_kc.get("/protected_test/second", headers=headers)
     assert resp.status_code == 401
 
 
@@ -56,7 +56,7 @@ async def test_expired_token(
 
     # Log in as a user
     body = data_generator.auth.get_login_credentials_request_body()
-    login_resp = await cli_no_cache.post("/login", json=body)
+    login_resp = await cli_no_cache.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
     access_token = login_resp.json()["access_token"]
@@ -67,7 +67,7 @@ async def test_expired_token(
 
     # Try to access route
     headers = data_generator.auth.get_bearer_header(access_token)
-    route_resp = await cli_no_cache.get("/protected/second", headers=headers)
+    route_resp = await cli_no_cache.get("/protected_test/second", headers=headers)
     assert route_resp.status_code == 401
 
     # Check if token was removed from cache
@@ -84,14 +84,14 @@ async def test_token_without_required_role(
 
     # Log in as a user
     body = data_generator.auth.get_login_credentials_request_body()
-    login_resp = await cli_no_cache.post("/login", json=body)
+    login_resp = await cli_no_cache.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
     access_token = login_resp.json()["access_token"]
 
     # Try to access route
     headers = data_generator.auth.get_bearer_header(access_token)
-    route_resp = await cli_no_cache.get("/protected/second", headers=headers)
+    route_resp = await cli_no_cache.get("/protected_test/second", headers=headers)
     assert route_resp.status_code == 403
 
 
@@ -105,14 +105,14 @@ async def test_valid_token(
 
     # Log in as a user
     body = data_generator.auth.get_login_credentials_request_body()
-    login_resp = await cli_no_cache.post("/login", json=body)
+    login_resp = await cli_no_cache.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
     access_token = login_resp.json()["access_token"]
 
     # Try to access route
     headers = data_generator.auth.get_bearer_header(access_token)
-    route_resp = await cli_no_cache.get("/protected/second", headers=headers)
+    route_resp = await cli_no_cache.get("/protected_test/second", headers=headers)
     assert route_resp.status_code == 200
 
 
@@ -129,7 +129,7 @@ async def test_valid_token_with_refresh(
 
     # Log in as a user
     body = data_generator.auth.get_login_credentials_request_body()
-    login_resp = await cli_no_cache.post("/login", json=body)
+    login_resp = await cli_no_cache.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
     access_token = login_resp.json()["access_token"]
@@ -139,7 +139,7 @@ async def test_valid_token_with_refresh(
 
     # Try to access route
     headers = data_generator.auth.get_bearer_header(access_token)
-    route_resp = await cli_no_cache.get("/protected/second", headers=headers)
+    route_resp = await cli_no_cache.get("/protected_test/second", headers=headers)
     assert route_resp.status_code == 200
 
 

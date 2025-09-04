@@ -1,5 +1,5 @@
 """
-/logout route tests.
+/auth/logout route tests.
 """
 if __name__ == "__main__":
     import os, sys
@@ -25,14 +25,14 @@ async def test_network_error(
     # Try to log out, while Keycloak "is unavailable"
     # (by using an app with a wrong Keycloak port)
     headers = data_generator.auth.get_bearer_header(tokens["access_token"])
-    resp = await cli_no_cache_and_kc.post("/logout", headers=headers)
+    resp = await cli_no_cache_and_kc.post("/auth/logout", headers=headers)
     assert resp.status_code == 503
 
 
 async def test_missing_authorization_header(
     cli_no_cache_and_kc: AsyncClient
 ):
-    resp = await cli_no_cache_and_kc.post("/logout")
+    resp = await cli_no_cache_and_kc.post("/auth/logout")
     assert resp.status_code == 403
 
 
@@ -40,7 +40,7 @@ async def test_invalid_authorization_header_format(
     cli_no_cache_and_kc: AsyncClient
 ):
     headers = {"Authorization": "incorrect bearer token"}
-    resp = await cli_no_cache_and_kc.post("/logout", headers=headers)
+    resp = await cli_no_cache_and_kc.post("/auth/logout", headers=headers)
     assert resp.status_code == 403
 
 
@@ -49,7 +49,7 @@ async def test_non_existing_in_cache_token(
     data_generator: DataGenerator
 ):
     headers = data_generator.auth.get_bearer_header("token, which does not exist in cache")
-    logout_resp = await cli_no_cache.post("/logout", headers=headers)
+    logout_resp = await cli_no_cache.post("/auth/logout", headers=headers)
     assert logout_resp.status_code == 204
     
 
@@ -64,7 +64,7 @@ async def test_expired_token(
 
     # Log in as a user
     body = data_generator.auth.get_login_credentials_request_body()
-    login_resp = await cli_no_cache.post("/login", json=body)
+    login_resp = await cli_no_cache.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
     access_token = login_resp.json()["access_token"]
@@ -75,7 +75,7 @@ async def test_expired_token(
 
     # Try to log out
     headers = data_generator.auth.get_bearer_header(access_token)
-    logout_resp = await cli_no_cache.post("/logout", headers=headers)
+    logout_resp = await cli_no_cache.post("/auth/logout", headers=headers)
     assert logout_resp.status_code == 204
 
     # Check if token was removed from cache
@@ -93,14 +93,14 @@ async def test_successful_logout(
 
     # Log in as a user
     body = data_generator.auth.get_login_credentials_request_body()
-    login_resp = await cli_no_cache.post("/login", json=body)
+    login_resp = await cli_no_cache.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
     access_token = login_resp.json()["access_token"]
 
     # Try to log out
     headers = data_generator.auth.get_bearer_header(access_token)
-    logout_resp = await cli_no_cache.post("/logout", headers=headers)
+    logout_resp = await cli_no_cache.post("/auth/logout", headers=headers)
     assert logout_resp.status_code == 204
 
     # Check if token was removed from cache
