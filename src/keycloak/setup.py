@@ -20,6 +20,7 @@ def reset_keycloak_app_realm(kc_config: KeycloakConfig):
         manager.create_app_client()
         manager.add_client_role("role-1")
         manager.add_client_role("role-2")
+        manager.add_client_role("can-post")
 
 
 def reset_keycloak_app_realm_users(kc_config: KeycloakConfig):
