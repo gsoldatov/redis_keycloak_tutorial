@@ -8,7 +8,7 @@ def get_keycloak_container_manager(
         debug: bool
     ):
     return ContainerManager(
-        name="keycloak_redis_tutorial_keycloak",
+        name=kc_config.container_name,
         run_args=[
             # Expose Keycloak on custom ports
             "-p", f"{kc_config.container_main_port}:8080",
@@ -29,7 +29,7 @@ def get_keycloak_container_manager(
             # "--health-timeout=10s",
         ],
 
-        image="quay.io/keycloak/keycloak:latest",
+        image="quay.io/keycloak/keycloak:26.3.3",
 
         run_command_args=[
             # Run in development mode
