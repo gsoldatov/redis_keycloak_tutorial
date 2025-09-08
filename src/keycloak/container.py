@@ -1,6 +1,8 @@
+from config import KeycloakConfig
+
+from src.keycloak.setup import reset_keycloak_app_realm, reset_keycloak_app_realm_users
 from src.util.container_manager import ContainerManager
 
-from config import KeycloakConfig
 
 
 def get_keycloak_container_manager(
@@ -40,3 +42,19 @@ def get_keycloak_container_manager(
         ],
         debug=debug
     )
+
+
+def run_keycloak_container(
+    kc_config: KeycloakConfig,
+    debug: bool
+):
+    kc_container_manager = get_keycloak_container_manager(kc_config, debug)
+    existed_before_run = kc_container_manager.exists()
+
+    # Run or start Keycloak container
+    kc_container_manager.run()
+
+    # Run initial Keycloak configuration, if container is run for the first time
+    if not existed_before_run:
+        reset_keycloak_app_realm(kc_config)
+        reset_keycloak_app_realm_users(kc_config)

@@ -74,6 +74,100 @@
 
 x limit scope to app_client when logging in;
 
++ Keycloak:
+    + change app roles:
+        x add `can_login` or use default role/setting;
+        + add `can_post`;
+
++ setup Redis container:
+    + add configuration;
+    + add container manager;
+    + add to CLI;
+
+- routes:
+    + change routes:
+        + add /auth prefix to auth routes;
+        + add /misc prefix to test routes;
+    
+    // redis.io/docs/latest/develop/clients/patterns/twitter-clone/
+
+    - /auth/register route:
+        - validates provided credentials;
+        - passes provided credentials to Keycloak;
+        - returns 503, if Keycloak is unavailable;
+        - returns 400, if user was not created;
+        - adds data of new user to the database;
+        - returns 201;
+    
+    // add key prefix for all Redis keys to support running tests
+    
+    // returns user info
+    - GET /users/:user_id route:
+        - returns public user info from the database;
+        - returns 404 if user not found;
+    
+    // adds a user follower
+    - PUT /users/:user_id/followers/:follower_id:
+        - validates user token:
+            - returns 401, if token does not exist;
+            - retuns 403, if token was issued for another user;
+        - adds `follower_id` to the followers sorted set of `user_id`;
+        - adds posts of `user_id` to the feed of `follower_id`;
+        - returns 404 if `user_id` or `follower_id` does not exist;
+    
+    // removes a user follower
+    - DELETE /users/:user_id/followers/:follower_id:
+        - validates user token:
+            - returns 401, if token does not exist;
+            - retuns 403, if token was issued for another user;
+        - removes `follower_id` from the followers sorted set of `user_id`;
+        - removes posts of `user_id` from the feed of `follower_id`;
+        - returns 404 if `user_id` does not exist;
+        - retunrs 200 if `follower_id` does not exist;
+    
+    // returns paginated user followers
+    - GET /users/:user_id/followers:
+        - gets starting post from URL params;
+        - returns 404 if `user_id` does not exist;
+        - returns a paginated list of followers of `user_id`;
+        - returns pagination info (total followers, next & prev pages);
+    
+    // adds a new post of a user
+    - POST /users/:user_id/posts:
+        - validates user token:
+            - returns 401, if token does not exist;
+            - retuns 403, if token was issued for another user;
+        - validates user post body;
+        - adds the post to the list of user posts;
+        - adds the post to the feeds of user's followers;
+    
+    // returns paginated posts of user
+    - GET /users/:user_id/posts:
+        - gets starting post from URL params;
+        - returns 404 if $user_id does not exist;
+        - returns a paginated list of user's posts;
+        - returns pagination info (next post ID & total posts);
+    
+    // returns paginated feed of user
+    - GET /users/:user_id/feed:
+        - gets a starting post from URL params;
+        - returns 404 if $user_id does not exist;
+        - returns a paginated list of posts in user's feed;
+        - returns pagination info (next post ID & total posts);
+
+- Redis keys & values:
+    - $prefix:user:$user_id: hash with data of $user_id;
+    - $prefix:user_followers:$user_id: sorted set with IDs of followers of $user_id;
+    - $prefix:user_feed:$user_id: sorted set with post IDs of users, followed by $user_id;
+    - $prefix:user_posts:$user_id: list of post IDs of $user_id posts;
+    - $prefix:id_next_post: ID of next created post;
+    - $prefix:post:$post_id: data of $post_id;
+
+? move access/refresh tokens store to Redis;
+
+- tests:
+    ???
+
 - Redis cache:
     - add tokens on login;
     - invalidate tokens on logout or expiry;

@@ -27,8 +27,16 @@ class KeycloakConfig(BaseModel):
         return f"http://localhost:{self.container_healthcheck_port}/health/ready"
 
 
+class RedisConfig(BaseModel):
+    container_name: str = Field(min_length=1)
+    container_port: int = Field(ge=1024, le=65535)
+
+    password: str = Field(min_length=1)
+
+
 class Config(BaseModel):
     keycloak: KeycloakConfig
+    redis: RedisConfig
 
 
 def load_config() -> Config:
