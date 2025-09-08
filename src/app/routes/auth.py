@@ -18,7 +18,7 @@ async def login(
     token_cache: Annotated[TokenCache, Depends(get_token_cache)]
 ):
     try:
-        tokens = await keycloak_client.login(credentials.username, credentials.password)
+        tokens = await keycloak_client.login(credentials)
         token_cache.add(tokens)
         return {"access_token": tokens["access_token"]}
     except AuthException:

@@ -5,6 +5,7 @@ from keycloak.exceptions import KeycloakAuthenticationError, KeycloakPostError, 
     KeycloakConnectionError
 
 from config import KeycloakConfig
+from src.app.models import UserCredentials
 from src.exceptions import NetworkException, AuthException
 
 
@@ -18,9 +19,9 @@ class KeycloakClient:
             client_secret_key=kc_config.app_client_secret
         )
     
-    async def login(self, username: str, password: str) -> dict:
+    async def login(self, credentials: UserCredentials) -> dict:
         try:
-            return await self.client.a_token(username, password)
+            return await self.client.a_token(credentials.username, credentials.password)
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
             # KeyCloakPostError can occur if account is not fully set up
             raise AuthException from e
