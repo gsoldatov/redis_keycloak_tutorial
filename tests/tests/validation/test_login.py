@@ -34,8 +34,8 @@ async def test_validation(
 
     # Incorrect param values
     incorrect_values = {
-        "username": [1, False, [], {}, ""],
-        "password": [1, False, [], {}, ""]
+        "username": [1, False, [], {}, "a" * 7, "a" * 33],
+        "password": [1, False, [], {}, "a" * 7, "a" * 33]
     }
     for attr in incorrect_values:
         for value in incorrect_values[attr]:
@@ -43,7 +43,6 @@ async def test_validation(
             body[attr] = value
             resp = await cli_no_cache_and_kc.post("/auth/login", json=body)
             assert resp.status_code == 422
-
 
 
 if __name__ == "__main__":
