@@ -12,24 +12,24 @@ from tests.data_generators import DataGenerator
 
 
 async def test_validation(
-    cli_no_cache_and_kc: AsyncClient,
+    cli_no_kc_and_redis: AsyncClient,
     data_generator: DataGenerator
 ):
     # Invalid request body
-    resp = await cli_no_cache_and_kc.post("/auth/login", content=b"Not a JSON")
+    resp = await cli_no_kc_and_redis.post("/auth/login", content=b"Not a JSON")
     assert resp.status_code == 422
 
     # Missing top-level params
     for attr in ("username", "password"):
         body = data_generator.auth.get_login_credentials_request_body()
         body.pop(attr)
-        resp = await cli_no_cache_and_kc.post("/auth/login", json=body)
+        resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
         assert resp.status_code == 422
     
     # Unallowed attributes
     body = data_generator.auth.get_login_credentials_request_body()
     body["unallowed"] = "some value"
-    resp = await cli_no_cache_and_kc.post("/auth/login", json=body)
+    resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
     assert resp.status_code == 422
 
     # Incorrect param values
@@ -41,7 +41,7 @@ async def test_validation(
         for value in incorrect_values[attr]:
             body = data_generator.auth.get_login_credentials_request_body()
             body[attr] = value
-            resp = await cli_no_cache_and_kc.post("/auth/login", json=body)
+            resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
             assert resp.status_code == 422
 
 
