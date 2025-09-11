@@ -19,7 +19,7 @@ async def test_network_error(
 ):
     # Try to log in, while Keycloak "is unavailable"
     # (by using an app with a wrong Keycloak port)
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
     assert resp.status_code == 503
 
@@ -33,7 +33,7 @@ async def test_disabled_user(
     user_id = keycloak_manager.add_user("username", "password", [], enabled=False)
 
     # Try to log in as a diabled user
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     resp = await cli_no_redis.post("/auth/login", json=body)
     assert resp.status_code == 401
 
@@ -51,7 +51,7 @@ async def test_invalid_credentials(
 
     # Try to log in with incorrect credentials
     for attr, value in [("username", "incorrect"), ("password", "incorrect")]:
-        body = data_generator.auth.get_login_credentials_request_body()
+        body = data_generator.auth.get_auth_login_request_body()
         body[attr] = value
         resp = await cli_no_redis.post("/auth/login", json=body)
         assert resp.status_code == 401
@@ -70,7 +70,7 @@ async def test_successful_login(
     user_id = keycloak_manager.add_user("username", "password", [])
 
     # Try to log in
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     resp = await cli_no_redis.post("/auth/login", json=body)
     assert resp.status_code == 200
     data = resp.json()

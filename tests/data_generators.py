@@ -1,5 +1,5 @@
 class AuthGenerator:
-    def get_login_credentials_request_body(
+    def get_auth_login_request_body(
         self,
         username: str = "username",
         password: str = "password"

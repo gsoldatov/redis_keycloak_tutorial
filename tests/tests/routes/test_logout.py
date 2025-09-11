@@ -63,7 +63,7 @@ async def test_expired_token(
     user_id = keycloak_manager.add_user("username", "password", [])
 
     # Log in as a user
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     login_resp = await cli_no_redis.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
@@ -92,7 +92,7 @@ async def test_successful_logout(
     user_id = keycloak_manager.add_user("username", "password", [])
 
     # Log in as a user
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     login_resp = await cli_no_redis.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200

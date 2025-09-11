@@ -55,7 +55,7 @@ async def test_expired_token(
     user_id = keycloak_manager.add_user("username", "password", ["role-1"])
 
     # Log in as a user
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     login_resp = await cli_no_redis.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
@@ -83,7 +83,7 @@ async def test_token_without_required_role(
     user_id = keycloak_manager.add_user("username", "password", ["role-2"])
 
     # Log in as a user
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     login_resp = await cli_no_redis.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
@@ -104,7 +104,7 @@ async def test_valid_token(
     user_id = keycloak_manager.add_user("username", "password", ["role-1"])
 
     # Log in as a user
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     login_resp = await cli_no_redis.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200
@@ -128,7 +128,7 @@ async def test_valid_token_with_refresh(
     user_id = keycloak_manager.add_user("username", "password", ["role-1"])
 
     # Log in as a user
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     login_resp = await cli_no_redis.post("/auth/login", json=body)
     
     assert login_resp.status_code == 200

@@ -21,13 +21,13 @@ async def test_validation(
 
     # Missing top-level params
     for attr in ("username", "password"):
-        body = data_generator.auth.get_login_credentials_request_body()
+        body = data_generator.auth.get_auth_login_request_body()
         body.pop(attr)
         resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
         assert resp.status_code == 422
     
     # Unallowed attributes
-    body = data_generator.auth.get_login_credentials_request_body()
+    body = data_generator.auth.get_auth_login_request_body()
     body["unallowed"] = "some value"
     resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
     assert resp.status_code == 422
@@ -39,7 +39,7 @@ async def test_validation(
     }
     for attr in incorrect_values:
         for value in incorrect_values[attr]:
-            body = data_generator.auth.get_login_credentials_request_body()
+            body = data_generator.auth.get_auth_login_request_body()
             body[attr] = value
             resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
             assert resp.status_code == 422
