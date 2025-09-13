@@ -13,32 +13,32 @@ def reset_keycloak_app_realm(kc_config: KeycloakConfig):
     Deletes existing app realm, creates a new one 
     and adds app client & roles into it.
     """
-    with KeycloakManager(kc_config) as manager:
-        manager.delete_app_realm()
+    with KeycloakAdminClient(kc_config) as keycloak_admin_client:
+        keycloak_admin_client.delete_app_realm()
 
-        manager.create_app_realm()
-        manager.create_app_client()
-        manager.add_client_role("role-1")
-        manager.add_client_role("role-2")
-        manager.add_client_role("can-post")
+        keycloak_admin_client.create_app_realm()
+        keycloak_admin_client.create_app_client()
+        keycloak_admin_client.add_client_role("role-1")
+        keycloak_admin_client.add_client_role("role-2")
+        keycloak_admin_client.add_client_role("can-post")
 
 
 def reset_keycloak_app_realm_users(kc_config: KeycloakConfig):
     """ Creates or replaces test users in the app realm. """
-    with KeycloakManager(kc_config) as manager:
-        manager.delete_users(["user-1", "user-2", "superuser"])
-        user_1_id = manager.add_user("user-1", "password", ["role-1"])
-        user_2_id = manager.add_user("user-2", "password", ["role-2"])
-        superuser_id = manager.add_user("superuser", "password", ["role-1", "role-2"])
+    with KeycloakAdminClient(kc_config) as keycloak_admin_client:
+        keycloak_admin_client.delete_users(["user-1", "user-2", "superuser"])
+        user_1_id = keycloak_admin_client.add_user("user-1", "password", ["role-1"])
+        user_2_id = keycloak_admin_client.add_user("user-2", "password", ["role-2"])
+        superuser_id = keycloak_admin_client.add_user("superuser", "password", ["role-1", "role-2"])
 
 
 def in_app_realm(fn):
     """
-    Decorator for KeycloakManager methods, which ensures,
+    Decorator for KeycloakAdminClient methods, which ensures,
     that app realm is selected as current realm when a method is called.
     """
     @wraps(fn)
-    def inner(self: "KeycloakManager", *args, **kwargs) -> Any:
+    def inner(self: "KeycloakAdminClient", *args, **kwargs) -> Any:
         current_realm = self.admin.get_current_realm()
 
         # Ensure admin tokens are issued, while master realm is selected
@@ -55,7 +55,7 @@ def in_app_realm(fn):
     return inner
 
 
-class KeycloakManager:
+class KeycloakAdminClient:
     def __init__(self, kc_config: KeycloakConfig):
         self.kc_config = kc_config
         self.admin = KeycloakAdmin(

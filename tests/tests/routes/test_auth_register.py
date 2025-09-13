@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
 from httpx import AsyncClient
 
-from src.keycloak.setup import KeycloakManager
+from src.keycloak.admin import KeycloakAdminClient
 from src.redis.admin import RedisAdminClient
 from tests.data_generators import DataGenerator
 
@@ -38,12 +38,12 @@ async def test_redis_network_error(
 async def test_existing_email(
     cli: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager,
+    keycloak_admin_client: KeycloakAdminClient,
     redis_admin_client: RedisAdminClient
 ):
     # Add an existing user
     email = "existing@example.com"
-    keycloak_manager.add_user(username="first_user", email=email)
+    keycloak_admin_client.add_user(username="first_user", email=email)
 
     # Try adding a user with the existing email
     body = data_generator.auth.get_auth_register_request_body(username="second_user", email=email)
@@ -51,7 +51,7 @@ async def test_existing_email(
     assert resp.status_code == 400
 
     # Check if Keycloak has a single user
-    keycloak_users = keycloak_manager.get_users()
+    keycloak_users = keycloak_admin_client.get_users()
     assert len(keycloak_users) == 1
     assert keycloak_users[0]["username"] == "first_user"
 
@@ -62,12 +62,12 @@ async def test_existing_email(
 async def test_existing_username(
     cli: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager,
+    keycloak_admin_client: KeycloakAdminClient,
     redis_admin_client: RedisAdminClient
 ):
     # Add an existing user
     username = "existing"
-    keycloak_manager.add_user(username=username, email="first@example.com")
+    keycloak_admin_client.add_user(username=username, email="first@example.com")
 
     # Try adding a user with the existing username
     body = data_generator.auth.get_auth_register_request_body(username=username, email="second@exmaple.com")
@@ -75,7 +75,7 @@ async def test_existing_username(
     assert resp.status_code == 400
 
     # Check if Keycloak has a single user
-    keycloak_users = keycloak_manager.get_users()
+    keycloak_users = keycloak_admin_client.get_users()
     assert len(keycloak_users) == 1
     assert keycloak_users[0]["username"] == username
 
@@ -86,7 +86,7 @@ async def test_existing_username(
 async def test_successful_registration(
     cli: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager,
+    keycloak_admin_client: KeycloakAdminClient,
     redis_admin_client: RedisAdminClient
 ):
     # Add a new user
@@ -95,7 +95,7 @@ async def test_successful_registration(
     assert resp.status_code == 201
 
     # Check if Keycloak has a new user
-    keycloak_users = keycloak_manager.get_users()
+    keycloak_users = keycloak_admin_client.get_users()
     assert len(keycloak_users) == 1
     assert keycloak_users[0]["username"] == body["username"]
 

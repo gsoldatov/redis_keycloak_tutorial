@@ -146,7 +146,7 @@ x limit scope to app_client when logging in;
         + existing username;
         + successful registration;
     
-    - rename KeycloakManager & keycloak_manager + keycloak/setup.py;
+    + rename KeycloakManager & keycloak_manager + keycloak/setup.py;
 
     - add error middleware:
         - catch existing exceptions:

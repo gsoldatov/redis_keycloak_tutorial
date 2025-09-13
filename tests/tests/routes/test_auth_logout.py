@@ -9,7 +9,7 @@ if __name__ == "__main__":
 from fastapi import FastAPI
 from httpx import AsyncClient
 
-from src.keycloak.setup import KeycloakManager
+from src.keycloak.admin import KeycloakAdminClient
 from tests.data_generators import DataGenerator
 
 
@@ -57,10 +57,10 @@ async def test_expired_token(
     app_no_redis: FastAPI,
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     # Add a user to Keycloak
-    user_id = keycloak_manager.add_user("username", "password", [])
+    user_id = keycloak_admin_client.add_user("username", "password", [])
 
     # Log in as a user
     body = data_generator.auth.get_auth_login_request_body()
@@ -70,8 +70,8 @@ async def test_expired_token(
     access_token = login_resp.json()["access_token"]
 
     # Expire token
-    keycloak_manager.delete_user_sessions(user_id)
-    assert len(keycloak_manager.get_user_sessions(user_id)) == 0
+    keycloak_admin_client.delete_user_sessions(user_id)
+    assert len(keycloak_admin_client.get_user_sessions(user_id)) == 0
 
     # Try to log out
     headers = data_generator.auth.get_bearer_header(access_token)
@@ -86,10 +86,10 @@ async def test_successful_logout(
     app_no_redis: FastAPI,
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     # Add a user to Keycloak
-    user_id = keycloak_manager.add_user("username", "password", [])
+    user_id = keycloak_admin_client.add_user("username", "password", [])
 
     # Log in as a user
     body = data_generator.auth.get_auth_login_request_body()
@@ -107,7 +107,7 @@ async def test_successful_logout(
     assert not app_no_redis.state.token_cache.contains(access_token)
 
     # Check if a session was removed from Keycloak
-    assert len(keycloak_manager.get_user_sessions(user_id)) == 0
+    assert len(keycloak_admin_client.get_user_sessions(user_id)) == 0
 
 
 if __name__ == "__main__":

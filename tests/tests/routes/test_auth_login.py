@@ -9,7 +9,7 @@ if __name__ == "__main__":
 from fastapi import FastAPI
 from httpx import AsyncClient
 
-from src.keycloak.setup import KeycloakManager
+from src.keycloak.admin import KeycloakAdminClient
 from tests.data_generators import DataGenerator
 
 
@@ -27,10 +27,10 @@ async def test_network_error(
 async def test_disabled_user(
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     # Add a disabled user to Keycloak
-    user_id = keycloak_manager.add_user("username", "password", [], enabled=False)
+    user_id = keycloak_admin_client.add_user("username", "password", [], enabled=False)
 
     # Try to log in as a diabled user
     body = data_generator.auth.get_auth_login_request_body()
@@ -38,16 +38,16 @@ async def test_disabled_user(
     assert resp.status_code == 401
 
     # Check if a session was not created
-    assert len(keycloak_manager.get_user_sessions(user_id)) == 0
+    assert len(keycloak_admin_client.get_user_sessions(user_id)) == 0
 
 
 async def test_invalid_credentials(
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     # Add a user to Keycloak
-    user_id = keycloak_manager.add_user("username", "password", [])
+    user_id = keycloak_admin_client.add_user("username", "password", [])
 
     # Try to log in with incorrect credentials
     for attr, value in [("username", "incorrect"), ("password", "incorrect")]:
@@ -57,17 +57,17 @@ async def test_invalid_credentials(
         assert resp.status_code == 401
 
     # Check if a session was not created
-    assert len(keycloak_manager.get_user_sessions(user_id)) == 0
+    assert len(keycloak_admin_client.get_user_sessions(user_id)) == 0
 
 
 async def test_successful_login(
     cli_no_redis: AsyncClient,
     app_no_redis: FastAPI,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     # Add a user to Keycloak
-    user_id = keycloak_manager.add_user("username", "password", [])
+    user_id = keycloak_admin_client.add_user("username", "password", [])
 
     # Try to log in
     body = data_generator.auth.get_auth_login_request_body()
@@ -77,7 +77,7 @@ async def test_successful_login(
     access_token = data["access_token"]
 
     # Check if a session was created
-    assert len(keycloak_manager.get_user_sessions(user_id)) == 1
+    assert len(keycloak_admin_client.get_user_sessions(user_id)) == 1
 
     # Check if access/refresh token was cached
     assert app_no_redis.state.token_cache.contains(access_token)

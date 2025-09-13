@@ -14,7 +14,7 @@ from config import load_config, Config
 from src.app.main import create_app
 
 from src.keycloak.container import get_keycloak_container_manager
-from src.keycloak.setup import KeycloakManager
+from src.keycloak.admin import KeycloakAdminClient
 from src.redis.container import get_redis_container_manager
 from src.redis.admin import RedisAdminClient
 
@@ -99,30 +99,30 @@ def config_with_unavailable_redis(test_config: Config) -> Config:
 
 ############ Module-scoped fixtures (Keycloak) ############
 @pytest.fixture(scope="module")
-def keycloak_manager(test_config: Config, keycloak_container: None):
-    """ Wait for Keycloak to be ready & yield a KeycloakManager instance. """
-    with KeycloakManager(test_config.keycloak) as manager:
-        yield manager
+def keycloak_admin_client(test_config: Config, keycloak_container: None):
+    """ Wait for Keycloak to be ready & yield a KeycloakAdminClient instance. """
+    with KeycloakAdminClient(test_config.keycloak) as client:
+        yield client
 
 
 @pytest.fixture(scope="module")
 def test_keycloak_realm(
     test_config: Config,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     """ Setup & teardown test Keycloak realm and return default configuration. """
-    keycloak_manager.delete_app_realm()
+    keycloak_admin_client.delete_app_realm()
 
-    keycloak_manager.create_app_realm()
-    keycloak_manager.create_app_client()
-    keycloak_manager.add_client_role("role-1")
-    keycloak_manager.add_client_role("role-2")
+    keycloak_admin_client.create_app_realm()
+    keycloak_admin_client.create_app_client()
+    keycloak_admin_client.add_client_role("role-1")
+    keycloak_admin_client.add_client_role("role-2")
 
-    client_representtation = keycloak_manager.get_app_client()
+    client_representtation = keycloak_admin_client.get_app_client()
 
     yield (client_representtation, )
     
-    keycloak_manager.delete_app_realm()
+    keycloak_admin_client.delete_app_realm()
 
 
 ############ Module-scoped fixtures (Redis) ############
@@ -151,17 +151,17 @@ def anyio_backend():
 @pytest.fixture
 def restore_keycloak_configuration(
     test_keycloak_realm: tuple,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
     
 ):
     """ Restores realm configuration after each test. """
     yield
 
     # Delete existing users in the test realm
-    keycloak_manager.delete_all_users()
+    keycloak_admin_client.delete_all_users()
 
     # Restore client state
-    keycloak_manager.update_app_client(test_keycloak_realm[0])
+    keycloak_admin_client.update_app_client(test_keycloak_realm[0])
 
 
 @pytest.fixture

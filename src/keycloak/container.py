@@ -1,6 +1,6 @@
 from config import KeycloakConfig
 
-from src.keycloak.setup import reset_keycloak_app_realm, reset_keycloak_app_realm_users
+from src.keycloak.admin import reset_keycloak_app_realm, reset_keycloak_app_realm_users
 from src.util.container_manager import ContainerManager
 
 

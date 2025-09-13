@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 from time import sleep
 
-from src.keycloak.setup import KeycloakManager
+from src.keycloak.admin import KeycloakAdminClient
 from tests.data_generators import DataGenerator
 
 
@@ -49,10 +49,10 @@ async def test_expired_token(
     app_no_redis: FastAPI,
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     # Add a user to Keycloak
-    user_id = keycloak_manager.add_user("username", "password", ["role-2"])
+    user_id = keycloak_admin_client.add_user("username", "password", ["role-2"])
 
     # Log in as a user
     body = data_generator.auth.get_auth_login_request_body()
@@ -62,8 +62,8 @@ async def test_expired_token(
     access_token = login_resp.json()["access_token"]
 
     # Expire token
-    keycloak_manager.delete_user_sessions(user_id)
-    assert len(keycloak_manager.get_user_sessions(user_id)) == 0
+    keycloak_admin_client.delete_user_sessions(user_id)
+    assert len(keycloak_admin_client.get_user_sessions(user_id)) == 0
 
     # Try to access route
     headers = data_generator.auth.get_bearer_header(access_token)
@@ -77,10 +77,10 @@ async def test_expired_token(
 async def test_token_without_required_role(
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     # Add a user to Keycloak
-    user_id = keycloak_manager.add_user("username", "password", ["role-1"])
+    user_id = keycloak_admin_client.add_user("username", "password", ["role-1"])
 
     # Log in as a user
     body = data_generator.auth.get_auth_login_request_body()
@@ -98,10 +98,10 @@ async def test_token_without_required_role(
 async def test_valid_token(
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     # Add a user to Keycloak
-    user_id = keycloak_manager.add_user("username", "password", ["role-2"])
+    user_id = keycloak_admin_client.add_user("username", "password", ["role-2"])
 
     # Log in as a user
     body = data_generator.auth.get_auth_login_request_body()
@@ -119,13 +119,13 @@ async def test_valid_token(
 async def test_valid_token_with_refresh(
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
-    keycloak_manager: KeycloakManager
+    keycloak_admin_client: KeycloakAdminClient
 ):
     # Change access token lifetime to 1 sec
-    keycloak_manager.update_app_client({"attributes": {"access.token.lifespan": 1}})
+    keycloak_admin_client.update_app_client({"attributes": {"access.token.lifespan": 1}})
 
     # Add a user to Keycloak
-    user_id = keycloak_manager.add_user("username", "password", ["role-2"])
+    user_id = keycloak_admin_client.add_user("username", "password", ["role-2"])
 
     # Log in as a user
     body = data_generator.auth.get_auth_login_request_body()
