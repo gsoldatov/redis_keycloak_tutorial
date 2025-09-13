@@ -84,7 +84,7 @@ x limit scope to app_client when logging in;
     + add container manager;
     + add to CLI;
 
-- routes:
+- Redis-using routes, tests & misc:
     + change routes:
         + add /auth prefix to auth routes;
         + add /misc prefix to test routes;
@@ -155,41 +155,51 @@ x limit scope to app_client when logging in;
             + log;
             + return 500;
     
-    - proparage subprocess errors during container operations;
+    x proparage subprocess errors during container operations;      // requires running individual healthchecks for each container
     
     // returns user info
-    - GET /users/:user_id route:
-        - returns public user info from the database;
-        - returns 404 if user not found;
+    + GET /users/:username route:
+        + returns public user info from the database;
+        + returns 404 if user not found;
+    
+    + GET /users/:username tests:
+        + username validation;
+        + Redis network error => 503;
+        + username validation is executed;
+        + non-existing user => 404;
+        + existing user => 200 + correct user data;
+    
+    - refactor validation tests:
+        - run all validation tests against Pydantic models + run a single route test for check if validation works;
     
     // adds a user follower
-    - PUT /users/:user_id/followers/:follower_id:
+    - PUT /users/:username/followers/:follower_id:
         - validates user token:
             - returns 401, if token does not exist;
             - retuns 403, if token was issued for another user;
-        - adds `follower_id` to the followers sorted set of `user_id`;
-        - adds posts of `user_id` to the feed of `follower_id`;
-        - returns 404 if `user_id` or `follower_id` does not exist;
+        - adds `follower_id` to the followers sorted set of `username`;
+        - adds posts of `username` to the feed of `follower_id`;
+        - returns 404 if `username` or `follower_id` does not exist;
     
     // removes a user follower
-    - DELETE /users/:user_id/followers/:follower_id:
+    - DELETE /users/:username/followers/:follower_id:
         - validates user token:
             - returns 401, if token does not exist;
             - retuns 403, if token was issued for another user;
-        - removes `follower_id` from the followers sorted set of `user_id`;
-        - removes posts of `user_id` from the feed of `follower_id`;
-        - returns 404 if `user_id` does not exist;
+        - removes `follower_id` from the followers sorted set of `username`;
+        - removes posts of `username` from the feed of `follower_id`;
+        - returns 404 if `username` does not exist;
         - retunrs 200 if `follower_id` does not exist;
     
     // returns paginated user followers
-    - GET /users/:user_id/followers:
+    - GET /users/:username/followers:
         - gets starting post from URL params;
-        - returns 404 if `user_id` does not exist;
-        - returns a paginated list of followers of `user_id`;
+        - returns 404 if `username` does not exist;
+        - returns a paginated list of followers of `username`;
         - returns pagination info (total followers, next & prev pages);
     
     // adds a new post of a user
-    - POST /users/:user_id/posts:
+    - POST /users/:username/posts:
         - validates user token:
             - returns 401, if token does not exist;
             - retuns 403, if token was issued for another user;
@@ -198,26 +208,26 @@ x limit scope to app_client when logging in;
         - adds the post to the feeds of user's followers;
     
     // returns paginated posts of user
-    - GET /users/:user_id/posts:
+    - GET /users/:username/posts:
         - gets starting post from URL params;
-        - returns 404 if $user_id does not exist;
+        - returns 404 if $username does not exist;
         - returns a paginated list of user's posts;
         - returns pagination info (next post ID & total posts);
     
     // returns paginated feed of user
-    - GET /users/:user_id/feed:
+    - GET /users/:username/feed:
         - gets a starting post from URL params;
-        - returns 404 if $user_id does not exist;
+        - returns 404 if $username does not exist;
         - returns a paginated list of posts in user's feed;
         - returns pagination info (next post ID & total posts);
 
 - Redis keys & values:
-    - $prefix:user:$user_id: hash with data of $user_id;
-    - $prefix:user_followers:$user_id: sorted set with IDs of followers of $user_id;
-    - $prefix:user_feed:$user_id: sorted set with post IDs of users, followed by $user_id;
-    - $prefix:user_posts:$user_id: list of post IDs of $user_id posts;
-    - $prefix:id_next_post: ID of next created post;
-    - $prefix:post:$post_id: data of $post_id;
+    - user:$username: hash with data of $username;
+    - user_followers:$username: sorted set with IDs of followers of $username;
+    - user_feed:$username: sorted set with post IDs of users, followed by $username;
+    - user_posts:$username: list of post IDs of $username posts;
+    - id_next_post: ID of next created post;
+    - post:$post_id: data of $post_id;
 
 ? move access/refresh tokens store to Redis;
 

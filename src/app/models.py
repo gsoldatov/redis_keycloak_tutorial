@@ -24,6 +24,11 @@ class User(Base):
     last_name: Name
 
 
+class UserPublic(User):
+    """ Public attributes of a user. """
+    model_config = ConfigDict(extra="ignore")
+
+
 class UserWithID(User):
     user_id: str
 

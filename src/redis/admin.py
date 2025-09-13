@@ -51,6 +51,9 @@ class RedisAdminClient:
         """ Clears all data in the database. """
         self.client.flushdb()
     
+    def set_user(self, user: UserWithID) -> None:
+        self.client.hset(RedisKeys.user(user.username), mapping=user.model_dump())
+    
     def get_user(self, username: str) -> UserWithID | None:
         user_data = self.client.hgetall(RedisKeys.user(username))
         return UserWithID.model_validate(user_data) if user_data else None
