@@ -6,7 +6,7 @@ from config import Config
 from src.app.tokens import TokenCache
 from src.keycloak.client import KeycloakClient
 from src.redis.client import RedisClient
-from src.exceptions import KeycloakConnectionException, AuthException
+from src.exceptions import KeycloakConnectionException, UnauthorizedOperationException
 
 
 def get_keycloak_client(request: Request):
@@ -59,7 +59,7 @@ async def get_refreshed_token(
             new_tokens = await keycloak_client.refresh_token(refresh_token)
             token_cache.add(new_tokens)
             return new_tokens["access_token"]
-        except AuthException:
+        except UnauthorizedOperationException:
             raise HTTPException(status_code=401, detail="Invalid or expired token")
             
     except KeycloakConnectionException:
@@ -87,7 +87,7 @@ def validate_token_role(role: str):
             
             if role not in resource_roles:
                 raise HTTPException(status_code=403)
-        except AuthException:
+        except UnauthorizedOperationException:
             raise HTTPException(status_code=401, detail="Invalid token")
         except KeycloakConnectionException:
             raise HTTPException(status_code=503)

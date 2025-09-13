@@ -2,9 +2,13 @@ class KeycloakConnectionException(Exception):
     pass
 
 
-class AuthException(Exception):
+class RedisConnectionException(Exception):
     pass
 
 
-class RedisConnectionException(Exception):
+class InvalidOperationException(Exception):
+    pass
+
+
+class UnauthorizedOperationException(Exception):
     pass

@@ -7,7 +7,7 @@ from keycloak.exceptions import KeycloakAuthenticationError, KeycloakPostError, 
 
 from config import KeycloakConfig
 from src.app.models import UserCredentials, UserRegistrationCredentials
-from src.exceptions import KeycloakConnectionException, AuthException
+from src.exceptions import InvalidOperationException, UnauthorizedOperationException, KeycloakConnectionException
 
 
 def ensure_admin_token(fn):
@@ -75,7 +75,7 @@ class KeycloakClient:
             return user_id
         
         except (KeycloakPostError, ) as e:
-            raise AuthException from e
+            raise InvalidOperationException from e
         except (KeycloakConnectionError,) as e:
             raise KeycloakConnectionException from e
     
@@ -84,7 +84,7 @@ class KeycloakClient:
             return await self.client.a_token(credentials.username, credentials.password)
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
             # KeyCloakPostError can occur if account is not fully set up
-            raise AuthException from e
+            raise UnauthorizedOperationException from e
         except (KeycloakConnectionError,) as e:
             raise KeycloakConnectionException from e
     
@@ -117,7 +117,7 @@ class KeycloakClient:
         except (KeycloakConnectionError,) as e:
             raise KeycloakConnectionException from e
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
-            raise AuthException from e
+            raise UnauthorizedOperationException from e
 
     async def decode_token(self, access_token: str) -> dict:
         """ Decodes the access token and returns its contents. """
@@ -126,7 +126,7 @@ class KeycloakClient:
         except KeycloakConnectionError as e:
             raise KeycloakConnectionException from e
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
-            raise AuthException from e
+            raise UnauthorizedOperationException from e
     
     @ensure_admin_token
     async def _get_app_client_id(self) -> str:
