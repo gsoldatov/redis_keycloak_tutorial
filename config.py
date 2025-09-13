@@ -33,6 +33,20 @@ class RedisConfig(BaseModel):
 
     password: str = Field(min_length=1)
 
+    max_databases: int = Field(ge=2)
+    database: int = Field(ge=0)
+
+    max_connections: int = Field(ge=1)
+    socket_timeout: float = Field(ge=0)
+    number_of_retries: int = Field(ge=0)
+    retry_base_time: float = Field(ge=0)
+    retry_cap_time: float = Field(ge=0)
+
+    @property
+    def url(self) -> str:
+        """ Redis connection URL. """
+        return f"redis://:{self.password}@localhost:{self.container_port}/{self.database}"
+
 
 class Config(BaseModel):
     keycloak: KeycloakConfig
