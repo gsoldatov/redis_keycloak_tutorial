@@ -6,6 +6,10 @@ sys.path.insert(0, str(project_root))
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from typing import AsyncIterator
+from redis.asyncio import Redis
+from redis.backoff import ExponentialBackoff
+from redis.asyncio.retry import Retry
+from redis.exceptions import BusyLoadingError, ConnectionError, TimeoutError
 
 from config import load_config, Config
 from src.app.routes import setup_routes
@@ -15,10 +19,48 @@ from src.app.tokens import TokenCache
 def get_lifespan(config: Config):
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        app.state.config = config
-        app.state.token_cache = TokenCache()
-        """ Refresh tokens store. """
-        yield
+        redis: Redis | None = None
+        try:
+            # Config
+            app.state.config = config
+
+            # Refresh token cache
+            app.state.token_cache = TokenCache()
+
+            # Setup Redis client
+            redis = Redis(
+                # Redis location & credentials
+                host="localhost",
+                port=config.redis.container_port,
+                db=config.redis.database,
+                password=config.redis.password,
+
+                # Connection settings
+                max_connections=config.redis.max_connections,
+                socket_timeout=config.redis.socket_timeout,
+                socket_connect_timeout=config.redis.socket_timeout,
+                
+                decode_responses=True,
+
+                # Retry strategy & exceptions
+                retry=Retry(
+                    ExponentialBackoff(
+                        base=config.redis.retry_base_time,
+                        cap=config.redis.retry_cap_time,
+                    ),
+                    config.redis.number_of_retries
+                ),
+                retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError]
+            )
+            app.state.redis = redis
+            
+            yield
+        
+        finally:
+            # Cleanup Redis connection pool (explicit close required for async client)
+            if redis is not None:
+                await redis.aclose()
+
     return lifespan
 
 

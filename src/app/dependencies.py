@@ -1,15 +1,22 @@
 from fastapi import Request, Depends, HTTPException
+from redis.asyncio import Redis
 from typing import Annotated
 
 from config import Config
 from src.app.tokens import TokenCache
 from src.keycloak.client import KeycloakClient
+from src.redis.client import RedisClient
 from src.exceptions import NetworkException, AuthException
 
 
 def get_keycloak_client(request: Request):
     config: Config = request.app.state.config
     return KeycloakClient(config.keycloak)
+
+
+def get_redis_client(request: Request):
+    redis: Redis = request.app.state.redis
+    return RedisClient(redis)
 
 
 def get_token_cache(request: Request):

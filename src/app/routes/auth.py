@@ -1,14 +1,40 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Annotated
 
-from src.app.dependencies import get_keycloak_client, get_bearer_token, get_token_cache
-from src.exceptions import AuthException, NetworkException
-from src.app.models import UserCredentials
+from src.app.dependencies import get_keycloak_client, get_redis_client, \
+    get_bearer_token, get_token_cache
+from src.exceptions import AuthException, NetworkException, RedisConnectionException
+from src.app.models import UserRegistrationCredentials, UserCredentials
 from src.app.tokens import TokenCache
 from src.keycloak.client import KeycloakClient
+from src.redis.client import RedisClient
 
 
 auth_router = APIRouter(prefix="/auth")
+
+
+@auth_router.post("/register")
+async def register(
+    credentials: UserRegistrationCredentials,
+    keycloak_client: Annotated[KeycloakClient, Depends(get_keycloak_client)],
+    redis_client: Annotated[RedisClient, Depends(get_redis_client)]
+):
+    try:
+        # Add a Keycloak user
+        user_id = await keycloak_client.register(credentials)
+        
+        # Add user credentials to Redis
+        # NOTE: possible failure to add a user to Redis after it's
+        # created in Keycloak is not handled
+        await redis_client.set_user(user_id, credentials)
+
+        # Return a response
+        raise HTTPException(status_code=201)
+
+    except AuthException:
+        raise HTTPException(status_code=400)
+    except (NetworkException, RedisConnectionException):
+        raise HTTPException(status_code=503)
 
 
 @auth_router.post("/login")

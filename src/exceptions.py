@@ -4,3 +4,7 @@ class NetworkException(Exception):
 
 class AuthException(Exception):
     pass
+
+
+class RedisConnectionException(Exception):
+    pass

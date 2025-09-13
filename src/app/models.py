@@ -6,22 +6,33 @@ Username = Annotated[str, Field(min_length=8, max_length=32)]
 Password = Annotated[str, Field(min_length=8, max_length=32)]
 Name = Annotated[str, Field(min_length=1, max_length=64)]
 
-class UserCredentials(BaseModel):
+
+class Base(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+
+class UserCredentials(Base):
+    """ Login route request body schema. """
     username: Username
     password: Password
 
 
-class UserRegistrationCredentials(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class User(Base):
+    """ Public attributes of a user. """
     username: Username
-    password: Password
-    password_repeat: Password
-    email: EmailStr
     first_name: Name
     last_name: Name
+
+
+class UserWithID(User):
+    user_id: str
+
+
+class UserRegistrationCredentials(User):
+    """ Registration route request body schema. """
+    password: Password
+    password_repeat: Password
+    email: EmailStr = Field(max_length=255)
 
     @model_validator(mode="after")
     def validate_password_repeat(self) -> Self:
