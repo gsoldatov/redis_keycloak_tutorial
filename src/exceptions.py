@@ -12,3 +12,7 @@ class InvalidOperationException(Exception):
 
 class UnauthorizedOperationException(Exception):
     pass
+
+
+class ForbiddenOperationException(Exception):
+    pass

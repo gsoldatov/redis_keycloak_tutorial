@@ -3,8 +3,6 @@ from typing import Annotated
 
 from src.app.dependencies import get_keycloak_client, get_redis_client, \
     get_bearer_token, get_token_cache
-from src.exceptions import InvalidOperationException, UnauthorizedOperationException, \
-    KeycloakConnectionException, RedisConnectionException
 from src.app.models import UserRegistrationCredentials, UserCredentials
 from src.app.tokens import TokenCache
 from src.keycloak.client import KeycloakClient
@@ -20,22 +18,16 @@ async def register(
     keycloak_client: Annotated[KeycloakClient, Depends(get_keycloak_client)],
     redis_client: Annotated[RedisClient, Depends(get_redis_client)]
 ):
-    try:
-        # Add a Keycloak user
-        user_id = await keycloak_client.register(credentials)
-        
-        # Add user credentials to Redis
-        # NOTE: possible failure to add a user to Redis after it's
-        # created in Keycloak is not handled
-        await redis_client.set_user(user_id, credentials)
+    # Add a Keycloak user
+    user_id = await keycloak_client.register(credentials)
+    
+    # Add user credentials to Redis
+    # NOTE: possible failure to add a user to Redis after it's
+    # created in Keycloak is not handled
+    await redis_client.set_user(user_id, credentials)
 
-        # Return a response
-        raise HTTPException(status_code=201)
-
-    except InvalidOperationException:
-        raise HTTPException(status_code=400)
-    except (KeycloakConnectionException, RedisConnectionException):
-        raise HTTPException(status_code=503)
+    # Return a response
+    raise HTTPException(status_code=201)
 
 
 @auth_router.post("/login")
@@ -44,14 +36,9 @@ async def login(
     keycloak_client: Annotated[KeycloakClient, Depends(get_keycloak_client)],
     token_cache: Annotated[TokenCache, Depends(get_token_cache)]
 ):
-    try:
-        tokens = await keycloak_client.login(credentials)
-        token_cache.add(tokens)
-        return {"access_token": tokens["access_token"]}
-    except UnauthorizedOperationException:
-        raise HTTPException(status_code=401)
-    except KeycloakConnectionException:
-        raise HTTPException(status_code=503)
+    tokens = await keycloak_client.login(credentials)
+    token_cache.add(tokens)
+    return {"access_token": tokens["access_token"]}
 
 
 @auth_router.post("/logout")
@@ -67,9 +54,6 @@ async def logout(
     if refresh_token is None:
         raise HTTPException(status_code=204)
 
-    try:
-        await keycloak_client.logout(refresh_token)
-        token_cache.pop(access_token)
-        raise HTTPException(status_code=204)
-    except KeycloakConnectionException:
-        raise HTTPException(status_code=503)
+    await keycloak_client.logout(refresh_token)
+    token_cache.pop(access_token)
+    raise HTTPException(status_code=204)

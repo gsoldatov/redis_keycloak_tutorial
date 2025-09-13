@@ -1,4 +1,4 @@
-from fastapi import Request, Depends, HTTPException
+from fastapi import Request, Depends
 from redis.asyncio import Redis
 from typing import Annotated
 
@@ -6,7 +6,7 @@ from config import Config
 from src.app.tokens import TokenCache
 from src.keycloak.client import KeycloakClient
 from src.redis.client import RedisClient
-from src.exceptions import KeycloakConnectionException, UnauthorizedOperationException
+from src.exceptions import UnauthorizedOperationException, ForbiddenOperationException
 
 
 def get_keycloak_client(request: Request):
@@ -41,29 +41,22 @@ async def get_refreshed_token(
     Returns the current version of the access token or raises 401, if such version could not be introspected/refreshed.
     """
     if access_token is None:
-        raise HTTPException(status_code=401, detail="Missing bearer token")
+        raise UnauthorizedOperationException("Missing bearer token.")
 
-    try:
-        # Validate token
-        token_info = await keycloak_client.introspect_token(access_token)
-        if token_info.get("active", False):
-            return access_token
-        
-        # Token is invalid/expired, try to refresh
-        refresh_token = token_cache.pop(access_token)
-        if refresh_token is None:
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
-        
-        try:
-            # Refresh token
-            new_tokens = await keycloak_client.refresh_token(refresh_token)
-            token_cache.add(new_tokens)
-            return new_tokens["access_token"]
-        except UnauthorizedOperationException:
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
-            
-    except KeycloakConnectionException:
-        raise HTTPException(status_code=503)
+    # Validate token
+    token_info = await keycloak_client.introspect_token(access_token)
+    if token_info.get("active", False):
+        return access_token
+    
+    # Token is invalid/expired, try to refresh
+    refresh_token = token_cache.pop(access_token)
+    if refresh_token is None:
+        raise UnauthorizedOperationException("Invalid or expired token.")
+
+    # Refresh token
+    new_tokens = await keycloak_client.refresh_token(refresh_token)
+    token_cache.add(new_tokens)
+    return new_tokens["access_token"]
 
 
 def validate_token_role(role: str):
@@ -78,18 +71,13 @@ def validate_token_role(role: str):
     ) -> None:
         config: Config = request.app.state.config
 
-        try:
-            token_data = await keycloak_client.decode_token(access_token)
-            resource_roles = token_data\
-                .get("resource_access", {})\
-                .get(config.keycloak.app_client_id, {})\
-                .get("roles", [])
-            
-            if role not in resource_roles:
-                raise HTTPException(status_code=403)
-        except UnauthorizedOperationException:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        except KeycloakConnectionException:
-            raise HTTPException(status_code=503)
+        token_data = await keycloak_client.decode_token(access_token)
+        resource_roles = token_data\
+            .get("resource_access", {})\
+            .get(config.keycloak.app_client_id, {})\
+            .get("roles", [])
+        
+        if role not in resource_roles:
+            raise ForbiddenOperationException("Operation is not allowed.")
     
     return inner

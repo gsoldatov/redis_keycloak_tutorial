@@ -75,7 +75,7 @@ class KeycloakClient:
             return user_id
         
         except (KeycloakPostError, ) as e:
-            raise InvalidOperationException from e
+            raise InvalidOperationException("Invalid user credentials.") from e
         except (KeycloakConnectionError,) as e:
             raise KeycloakConnectionException from e
     
@@ -84,7 +84,7 @@ class KeycloakClient:
             return await self.client.a_token(credentials.username, credentials.password)
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
             # KeyCloakPostError can occur if account is not fully set up
-            raise UnauthorizedOperationException from e
+            raise UnauthorizedOperationException("Invalid user credentials.") from e
         except (KeycloakConnectionError,) as e:
             raise KeycloakConnectionException from e
     
@@ -117,7 +117,7 @@ class KeycloakClient:
         except (KeycloakConnectionError,) as e:
             raise KeycloakConnectionException from e
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
-            raise UnauthorizedOperationException from e
+            raise UnauthorizedOperationException("User session expired or do not exist.") from e
 
     async def decode_token(self, access_token: str) -> dict:
         """ Decodes the access token and returns its contents. """
@@ -126,7 +126,7 @@ class KeycloakClient:
         except KeycloakConnectionError as e:
             raise KeycloakConnectionException from e
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
-            raise UnauthorizedOperationException from e
+            raise UnauthorizedOperationException("Invalid access token.") from e
     
     @ensure_admin_token
     async def _get_app_client_id(self) -> str:

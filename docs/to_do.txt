@@ -148,15 +148,12 @@ x limit scope to app_client when logging in;
     
     + rename KeycloakManager & keycloak_manager + keycloak/setup.py;
 
-    - add error middleware:
-        - catch existing exceptions:
-            - split AuthException into UnauthorizedOperationException & ForbiddenOperationException (trigger 401 & 403 HTTP responses);
-        - catch other exceptions:
-            - log;
-            - return 500;
-        - update Keycloak client exceptions:
-            - remove KeycloakPostError from registration command;
-            ???
+    + add error middleware:
+        + catch existing exceptions:
+            + split AuthException into exceptions, which result in 400 & 401 responses;
+        + catch other exceptions:
+            + log;
+            + return 500;
     
     - proparage subprocess errors during container operations;
     

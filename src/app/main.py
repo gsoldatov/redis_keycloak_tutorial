@@ -12,6 +12,7 @@ from redis.asyncio.retry import Retry
 from redis.exceptions import BusyLoadingError, ConnectionError, TimeoutError
 
 from config import load_config, Config
+from src.app.middleware import setup_middleware
 from src.app.routes import setup_routes
 from src.app.tokens import TokenCache
 
@@ -67,6 +68,7 @@ def get_lifespan(config: Config):
 def create_app(config: Config) -> FastAPI:
     app = FastAPI(lifespan=get_lifespan(config))
     setup_routes(app)
+    setup_middleware(app)
     return app
 
 
