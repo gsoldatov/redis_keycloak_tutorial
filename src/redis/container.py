@@ -20,7 +20,10 @@ def get_redis_container_manager(
             "redis-server",
             
             # Add a password for default user
-            f'--requirepass "{redis_config.password}"'
+            f'--requirepass "{redis_config.password}"',
+
+            # Set number of logical databases
+            f'--databases {redis_config.max_databases}'
         ],
         debug=debug
     )
