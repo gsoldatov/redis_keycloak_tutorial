@@ -6,3 +6,6 @@ __pycache__/
 *config.yml
 
 temp/
+
+*shared_test_state.json
+shared_test_state.json.lock

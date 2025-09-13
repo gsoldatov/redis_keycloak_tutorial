@@ -16,13 +16,23 @@ from src.app.main import create_app
 from src.keycloak.container import get_keycloak_container_manager
 from src.keycloak.setup import KeycloakManager
 from src.redis.container import get_redis_container_manager
+from src.redis.admin import RedisAdminClient
 
 from tests.data_generators import DataGenerator
+from tests.shared_test_state import SharedTestStateManager
 
 
 ############ Session-scoped fixtures ############
 @pytest.fixture(scope="session")
-def config() -> Config:
+def reset_shared_test_state(testrun_uid) -> None:
+    """ Reset shared state file. """
+    SharedTestStateManager().reset_state(testrun_uid)
+
+
+@pytest.fixture(scope="session")
+def config(
+    reset_shared_test_state     # Trigger shared state file reset for all tests
+) -> Config:
     return load_config()
 
 
@@ -57,16 +67,32 @@ def redis_container(config: Config):
 def test_config(config: Config) -> Config:
     postfix = uuid4().hex
     test_config = Config.model_validate(config.model_dump())
+
+    # Test Keycloak settings
     test_config.keycloak.app_realm_name = f"test_{postfix}"
+
+    # Test Redis settings
+    test_config.redis.database = SharedTestStateManager().get_free_redis_database_number()
+    test_config.redis.socket_timeout = 0.25
+    test_config.redis.number_of_retries = 0
+
     return test_config
 
 
 @pytest.fixture(scope="module")
-def config_with_unavailable_keycloak_and_redis(config: Config) -> Config:
+def config_with_unavailable_keycloak_and_redis(test_config: Config) -> Config:
     """ Test config with its Keycloak and Redis container ports changed to incorrect values. """
-    updated_config = Config.model_validate(config.model_dump())
+    updated_config = Config.model_validate(test_config.model_dump())
     updated_config.keycloak.container_main_port += 1000
     updated_config.keycloak.container_healthcheck_port += 1000
+    updated_config.redis.container_port += 1000
+    return updated_config
+
+
+@pytest.fixture(scope="module")
+def config_with_unavailable_redis(test_config: Config) -> Config:
+    """ Test config with its Redis container ports changed to incorrect values. """
+    updated_config = Config.model_validate(test_config.model_dump())
     updated_config.redis.container_port += 1000
     return updated_config
 
@@ -100,6 +126,11 @@ def test_keycloak_realm(
 
 
 ############ Module-scoped fixtures (Redis) ############
+@pytest.fixture(scope="module")
+def redis_admin_client(test_config: Config, redis_container: None):
+    """ Wait for Redis to be ready & yield an admin client. """
+    with RedisAdminClient(test_config.redis) as client:
+        yield client
 
 
 ############ Test-scoped fixtures (common) ############
@@ -134,6 +165,14 @@ def restore_keycloak_configuration(
 
 
 @pytest.fixture
+def reset_redis_database(redis_admin_client: RedisAdminClient):
+    """ Clears current Redis database after a test. """
+    yield
+    redis_admin_client.flush_db()
+
+
+############ Test-scoped fixtures (no Keycloak & Redis) ############
+@pytest.fixture
 def app_no_kc_and_redis(anyio_backend, config_with_unavailable_keycloak_and_redis):
     return create_app(config_with_unavailable_keycloak_and_redis) 
 
@@ -153,9 +192,11 @@ async def cli_no_kc_and_redis(app_no_kc_and_redis):
         ) as async_client:
             yield async_client
 
+
+############ Test-scoped fixtures (no Redis) ############
 @pytest.fixture
-def app_no_redis(anyio_backend, test_config):
-    return create_app(test_config)
+def app_no_redis(anyio_backend, config_with_unavailable_redis):
+    return create_app(config_with_unavailable_redis)
 
 
 @pytest.fixture
@@ -167,6 +208,28 @@ async def cli_no_redis(
     # Enable app's lifespan events in test environment
     # https://fastapi.tiangolo.com/advanced/async-tests
     async with LifespanManager(app_no_redis) as manager:
+        async with AsyncClient(
+            transport=ASGITransport(app=manager.app), base_url="http://test"
+        ) as async_client:
+            yield async_client
+
+
+############ Test-scoped fixtures (with Keycloak & Redis) ############
+@pytest.fixture
+def app(anyio_backend, test_config):
+    return create_app(test_config)
+
+
+@pytest.fixture
+async def cli(
+        app,
+        restore_keycloak_configuration,
+        reset_redis_database
+    ):
+    """ Yields a test client for the application without cache enabled. """
+    # Enable app's lifespan events in test environment
+    # https://fastapi.tiangolo.com/advanced/async-tests
+    async with LifespanManager(app) as manager:
         async with AsyncClient(
             transport=ASGITransport(app=manager.app), base_url="http://test"
         ) as async_client:
