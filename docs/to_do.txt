@@ -91,15 +91,74 @@ x limit scope to app_client when logging in;
     
     // redis.io/docs/latest/develop/clients/patterns/twitter-clone/
 
-    - /auth/register route:
-        - validates provided credentials;
-        - passes provided credentials to Keycloak;
-        - returns 503, if Keycloak is unavailable;
-        - returns 400, if user was not created;
-        - adds data of new user to the database;
-        - returns 201;
+    + /auth/register route:
+        + validates provided credentials;
+        + passes provided credentials to Keycloak;
+        + returns 503, if Keycloak is unavailable;
+        + returns 400, if user was not created;
+        + adds data of the new user to the database;
+        + returns 503, if Redis is unavailable;
+        + returns 201;
     
-    // add key prefix for all Redis keys to support running tests
+    + test fixtures:
+        x add key prefix for all Redis keys to support running tests;
+        
+        + rename fixtures;
+
+        + config fixture for unavailable Keycloak & Redis:
+            + add Redis settings;
+            + change scope to module;
+        
+        + add a shared test state manager class;    // use a file lock https://py-filelock.readthedocs.io/en/latest/index.html
+        + add a session fixute for resetting the shared state;
+
+        + add a fixture for obtaining a Redis database number:
+            + use a file lock to read currently used database number, increment it and write new state;
+            x store an array of released database numbers:
+                x append to it when module tests are done;
+                x pop from it before incrementing the counter;
+                x do not exceed maximum database number from the config;
+                x retry, if counter reached max value and no released number are available;
+
+        + test config fixture:
+            + module-scoped;
+            + set test Redis settings (db number & network);
+        
+        + Redis client fixture:
+            + module-scoped;
+            + ensures Redis is up;
+            + connects to the correct DB;
+        
+        + app & client fixtures with Keycloak & Redis available:
+            + add Redis DB cleanup after tests;
+        
+        + config fixture for Redis unavailable:
+            + module-scoped;
+            + ensures Keycloak is available;
+        
+        + app & client fixtures for Redis unavailable;
+        
+    + /auth/register tests:
+        + validation;
+        + keycloak network error;
+        + redis network error;
+        + existing email;
+        + existing username;
+        + successful registration;
+    
+    - rename KeycloakManager & keycloak_manager + keycloak/setup.py;
+
+    - add error middleware:
+        - catch existing exceptions:
+            - split AuthException into UnauthorizedOperationException & ForbiddenOperationException (trigger 401 & 403 HTTP responses);
+        - catch other exceptions:
+            - log;
+            - return 500;
+        - update Keycloak client exceptions:
+            - remove KeycloakPostError from registration command;
+            ???
+    
+    - proparage subprocess errors during container operations;
     
     // returns user info
     - GET /users/:user_id route:
@@ -164,6 +223,8 @@ x limit scope to app_client when logging in;
     - $prefix:post:$post_id: data of $post_id;
 
 ? move access/refresh tokens store to Redis;
+
+- allow logging in only via email (forbid using username) & add tests;
 
 - tests:
     ???

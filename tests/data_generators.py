@@ -1,4 +1,23 @@
 class AuthGenerator:
+    def get_auth_register_request_body(
+        self,
+        email: str = "test@example.com",
+        username: str = "username",
+        first_name: str = "first name",
+        last_name: str = "last name",
+        password: str = "password",
+        password_repeat: str | None = None,
+
+    ):
+        return {
+            "email": email,
+            "username": username,
+            "password": password,
+            "first_name": first_name,
+            "last_name": last_name,
+            "password_repeat": password_repeat if password_repeat is not None else password
+        }
+    
     def get_auth_login_request_body(
         self,
         username: str = "username",
