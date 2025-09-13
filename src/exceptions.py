@@ -1,4 +1,4 @@
-class NetworkException(Exception):
+class KeycloakConnectionException(Exception):
     pass
 
 

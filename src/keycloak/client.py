@@ -7,7 +7,7 @@ from keycloak.exceptions import KeycloakAuthenticationError, KeycloakPostError, 
 
 from config import KeycloakConfig
 from src.app.models import UserCredentials, UserRegistrationCredentials
-from src.exceptions import NetworkException, AuthException
+from src.exceptions import KeycloakConnectionException, AuthException
 
 
 def ensure_admin_token(fn):
@@ -24,7 +24,7 @@ def ensure_admin_token(fn):
 
             return await fn(self, *args, **kwargs)
         except KeycloakConnectionError as e:
-            raise NetworkException from e
+            raise KeycloakConnectionException from e
 
     return inner
 
@@ -77,7 +77,7 @@ class KeycloakClient:
         except (KeycloakPostError, ) as e:
             raise AuthException from e
         except (KeycloakConnectionError,) as e:
-            raise NetworkException from e
+            raise KeycloakConnectionException from e
     
     async def login(self, credentials: UserCredentials) -> dict:
         try:
@@ -86,13 +86,13 @@ class KeycloakClient:
             # KeyCloakPostError can occur if account is not fully set up
             raise AuthException from e
         except (KeycloakConnectionError,) as e:
-            raise NetworkException from e
+            raise KeycloakConnectionException from e
     
     async def logout(self, refresh_token: str):
         try:
             await self.client.a_logout(refresh_token)
         except (KeycloakConnectionError,) as e:
-            raise NetworkException from e
+            raise KeycloakConnectionException from e
         except KeycloakPostError as e:
             try:
                 error_json = json.loads(e.error_message)
@@ -108,14 +108,14 @@ class KeycloakClient:
         try:
             return await self.client.a_introspect(access_token)
         except KeycloakConnectionError as e:
-            raise NetworkException from e
+            raise KeycloakConnectionException from e
 
     async def refresh_token(self, refresh_token: str) -> dict:
         """ Refreshes access token using `refresh_token`. Returns new tokens. """
         try:
             return await self.client.a_refresh_token(refresh_token)
         except (KeycloakConnectionError,) as e:
-            raise NetworkException from e
+            raise KeycloakConnectionException from e
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
             raise AuthException from e
 
@@ -124,7 +124,7 @@ class KeycloakClient:
         try:
             return await self.client.a_decode_token(access_token)
         except KeycloakConnectionError as e:
-            raise NetworkException from e
+            raise KeycloakConnectionException from e
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
             raise AuthException from e
     

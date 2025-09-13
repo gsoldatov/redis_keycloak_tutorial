@@ -3,7 +3,7 @@ from typing import Annotated
 
 from src.app.dependencies import get_keycloak_client, get_redis_client, \
     get_bearer_token, get_token_cache
-from src.exceptions import AuthException, NetworkException, RedisConnectionException
+from src.exceptions import AuthException, KeycloakConnectionException, RedisConnectionException
 from src.app.models import UserRegistrationCredentials, UserCredentials
 from src.app.tokens import TokenCache
 from src.keycloak.client import KeycloakClient
@@ -33,7 +33,7 @@ async def register(
 
     except AuthException:
         raise HTTPException(status_code=400)
-    except (NetworkException, RedisConnectionException):
+    except (KeycloakConnectionException, RedisConnectionException):
         raise HTTPException(status_code=503)
 
 
@@ -49,7 +49,7 @@ async def login(
         return {"access_token": tokens["access_token"]}
     except AuthException:
         raise HTTPException(status_code=401)
-    except NetworkException:
+    except KeycloakConnectionException:
         raise HTTPException(status_code=503)
 
 
@@ -70,5 +70,5 @@ async def logout(
         await keycloak_client.logout(refresh_token)
         token_cache.pop(access_token)
         raise HTTPException(status_code=204)
-    except NetworkException:
+    except KeycloakConnectionException:
         raise HTTPException(status_code=503)
