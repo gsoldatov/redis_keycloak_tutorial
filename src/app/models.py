@@ -37,7 +37,7 @@ class UserRegistrationCredentials(User):
     """ Registration route request body schema. """
     password: Password
     password_repeat: Password
-    email: EmailStr = Field(max_length=255)
+    email: EmailStr
 
     @model_validator(mode="after")
     def validate_password_repeat(self) -> Self:

@@ -41,6 +41,16 @@ async def test_disabled_user(
     assert len(keycloak_admin_client.get_user_sessions(user_id)) == 0
 
 
+async def test_validation(
+    cli_no_kc_and_redis: AsyncClient,
+    data_generator: DataGenerator
+):
+    # Check if validator is called (full validation tests are inside `validation` dir)
+    body = data_generator.auth.get_auth_login_request_body(username="")
+    resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
+    assert resp.status_code == 422
+
+
 async def test_invalid_credentials(
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,

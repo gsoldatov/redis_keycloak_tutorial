@@ -35,6 +35,16 @@ async def test_redis_network_error(
     assert resp.status_code == 503
 
 
+async def test_validation(
+    cli_no_kc_and_redis: AsyncClient,
+    data_generator: DataGenerator
+):
+    # Check if validator is called (full validation tests are inside `validation` dir)
+    body = data_generator.auth.get_auth_register_request_body(username="")
+    resp = await cli_no_kc_and_redis.post("/auth/register", json=body)
+    assert resp.status_code == 422
+
+
 async def test_existing_email(
     cli: AsyncClient,
     data_generator: DataGenerator,

@@ -6,31 +6,26 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(__file__, "../" * 4)))
     from tests.util import run_pytest_tests
 
-from httpx import AsyncClient
+from pydantic import ValidationError
+import pytest
 
+from src.app.models import UserCredentials
 from tests.data_generators import DataGenerator
 
 
-async def test_validation(
-    cli_no_kc_and_redis: AsyncClient,
-    data_generator: DataGenerator
-):
-    # Invalid request body
-    resp = await cli_no_kc_and_redis.post("/auth/login", content=b"Not a JSON")
-    assert resp.status_code == 422
-
+def test_incorrect_values(data_generator: DataGenerator):
     # Missing top-level params
     for attr in ("username", "password"):
-        body = data_generator.auth.get_auth_login_request_body()
-        body.pop(attr)
-        resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
-        assert resp.status_code == 422
+        data = data_generator.auth.get_auth_login_request_body()
+        data.pop(attr)
+        with pytest.raises(ValidationError):
+            UserCredentials(**data)
     
     # Unallowed attributes
-    body = data_generator.auth.get_auth_login_request_body()
-    body["unallowed"] = "some value"
-    resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
-    assert resp.status_code == 422
+    data = data_generator.auth.get_auth_login_request_body()
+    data["unallowed"] = "some value"
+    with pytest.raises(ValidationError):
+        UserCredentials(**data)
 
     # Incorrect param values
     incorrect_values = {
@@ -39,10 +34,22 @@ async def test_validation(
     }
     for attr in incorrect_values:
         for value in incorrect_values[attr]:
-            body = data_generator.auth.get_auth_login_request_body()
-            body[attr] = value
-            resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
-            assert resp.status_code == 422
+            data = data_generator.auth.get_auth_login_request_body()
+            data[attr] = value
+            with pytest.raises(ValidationError):
+                UserCredentials(**data)
+
+
+def test_correct_values(data_generator: DataGenerator):
+    values = {
+        "username": ["a" * 8, "a" * 32],
+        "password": ["a" * 8, "a" * 32]
+    }
+    for attr in values:
+        for value in values[attr]:
+            data = data_generator.auth.get_auth_login_request_body()
+            data[attr] = value
+            UserCredentials(**data)
 
 
 if __name__ == "__main__":

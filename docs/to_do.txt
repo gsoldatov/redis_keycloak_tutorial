@@ -169,8 +169,8 @@ x limit scope to app_client when logging in;
         + non-existing user => 404;
         + existing user => 200 + correct user data;
     
-    - refactor validation tests:
-        - run all validation tests against Pydantic models + run a single route test for check if validation works;
+    + refactor validation tests:
+        + run all validation tests against Pydantic models + run a single route test for check if validation works;
     
     // adds a user follower
     - PUT /users/:username/followers/:follower_id:

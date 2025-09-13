@@ -6,35 +6,31 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(__file__, "../" * 4)))
     from tests.util import run_pytest_tests
 
-from httpx import AsyncClient
+from pydantic import ValidationError
+import pytest
 
+from src.app.models import UserRegistrationCredentials
 from tests.data_generators import DataGenerator
 
 
-async def test_validation(
-    cli_no_kc_and_redis: AsyncClient,
-    data_generator: DataGenerator
-):
-    # Invalid request body
-    resp = await cli_no_kc_and_redis.post("/auth/register", content=b"Not a JSON")
-    assert resp.status_code == 422
-
+def test_incorrect_values(data_generator: DataGenerator):
     # Missing top-level params
     for attr in ("email", "username", "first_name", "last_name", "password", "password_repeat"):
-        body = data_generator.auth.get_auth_register_request_body()
-        body.pop(attr)
-        resp = await cli_no_kc_and_redis.post("/auth/register", json=body)
-        assert resp.status_code == 422
+        data = data_generator.auth.get_auth_register_request_body()
+        data.pop(attr)
+        with pytest.raises(ValidationError):
+            UserRegistrationCredentials(**data)
     
     # Unallowed attributes
-    body = data_generator.auth.get_auth_register_request_body()
-    body["unallowed"] = "some value"
-    resp = await cli_no_kc_and_redis.post("/auth/register", json=body)
-    assert resp.status_code == 422
+    data = data_generator.auth.get_auth_register_request_body()
+    data["unallowed"] = "some value"
+    with pytest.raises(ValidationError):
+        UserRegistrationCredentials(**data)
 
     # Incorrect param values
     incorrect_values = {
-        "email": [1, False, [], {}, "not an email", "a" * 255 + "@example.com"],
+        # NOTE: see comment in valid values test for email max lengths
+        "email": [1, False, [], {}, "not an email", "a" * 65 + "@example.com", "addr@" + "a" * (255 - 5 - 4) + ".com"],
         "username": [1, False, [], {}, "a" * 7, "a" * 33],
         "first_name": [1, False, [], {}, "", "a" * 65],
         "last_name": [1, False, [], {}, "", "a" * 65],
@@ -42,16 +38,41 @@ async def test_validation(
     }
     for attr in incorrect_values:
         for value in incorrect_values[attr]:
-            body = data_generator.auth.get_auth_register_request_body()
-            body[attr] = value
-            resp = await cli_no_kc_and_redis.post("/auth/register", json=body)
-            assert resp.status_code == 422
+            data = data_generator.auth.get_auth_register_request_body()
+            data[attr] = value
+            with pytest.raises(ValidationError):
+                UserRegistrationCredentials(**data)
     
     # Password repeat does not match
-    body = data_generator.auth.get_auth_register_request_body(password="password")
-    body["password_repeat"] = "not matching password repeat"
-    resp = await cli_no_kc_and_redis.post("/auth/register", json=body)
-    assert resp.status_code == 422
+    data = data_generator.auth.get_auth_register_request_body(password="password")
+    data["password_repeat"] = "not matching password repeat"
+    with pytest.raises(ValidationError):
+        UserRegistrationCredentials(**data)
+
+
+def test_correct_values(data_generator: DataGenerator):
+    values = {
+        "email": [
+            "email@example.com",
+            "a" * 64 + "@example.com",
+            # email max lengths, according to email_validator lib:
+            # - total - 254 chars;
+            # - local part (before @) - 63 chars;
+            # - dns parts - 63 chars each
+            "addr@" + ("a" * 63 + ".") * 3 + "a" * (254 - 5 - 64 * 3 - 4) + ".com"
+        ],
+        "username": ["a" * 8, "a" * 32],
+        "first_name": ["a" * 8, "a" * 64],
+        "last_name": ["a" * 8, "a" * 64],
+        "password": ["a" * 8, "a" * 32]
+    }
+    for attr in values:
+        for value in values[attr]:
+            data = data_generator.auth.get_auth_register_request_body()
+            data[attr] = value
+            if attr == "password":
+                data["password_repeat"] = value
+            UserRegistrationCredentials(**data)
 
 
 if __name__ == "__main__":
