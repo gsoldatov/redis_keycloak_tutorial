@@ -168,9 +168,10 @@ class KeycloakManager:
     @in_app_realm
     def add_user(
         self,
-        username: str,
-        password: str,
-        app_client_roles: list[str],
+        username: str = "username",
+        password: str = "password",
+        app_client_roles: list[str] | None = None,
+        email: str | None = None,
         enabled: bool = True
     ) -> str:
         """
@@ -178,6 +179,7 @@ class KeycloakManager:
         Assigns client roles to the user.
         Returns the user ID.
         """
+        email = email if email is not None else f"{username}@example.com"
         user_id = self.admin.create_user({
             "username": username,
             "enabled": enabled,
@@ -190,7 +192,7 @@ class KeycloakManager:
             # Additional attributes, which are required for account setup
             "firstName": f"{username} first name",
             "lastName": f"{username} last name",
-            "email": f"{username}@example.com",
+            "email": email,
             "emailVerified": True
         })
 
@@ -212,6 +214,11 @@ class KeycloakManager:
         if roles_to_assign:
             self.admin.assign_client_role(user_id, self.app_client_id, roles_to_assign)
 
+    @in_app_realm
+    def get_users(self) -> list[dict]:
+        """ Returns all existing users in the app realm. """
+        return self.admin.get_users()
+    
     @in_app_realm
     def delete_user(self, user_id: str) -> None:
         """ Deletes a user with the given `user_id` in the app realm. """
