@@ -26,9 +26,9 @@ def reset_keycloak_app_realm(kc_config: KeycloakConfig):
 def reset_keycloak_app_realm_users(kc_config: KeycloakConfig):
     """ Creates or replaces test users in the app realm. """
     with KeycloakAdminClient(kc_config) as keycloak_admin_client:
-        keycloak_admin_client.delete_users(["user-1", "user-2", "superuser"])
-        user_1_id = keycloak_admin_client.add_user("user-1", "password", ["role-1"])
-        user_2_id = keycloak_admin_client.add_user("user-2", "password", ["role-2"])
+        keycloak_admin_client.delete_users(["first_user", "second_user", "superuser"])
+        user_1_id = keycloak_admin_client.add_user("first_user", "password", ["role-1"])
+        user_2_id = keycloak_admin_client.add_user("second_user", "password", ["role-2"])
         superuser_id = keycloak_admin_client.add_user("superuser", "password", ["role-1", "role-2"])
 
 
