@@ -5,7 +5,7 @@ from time import sleep
 from typing import Self
 
 from config import RedisConfig
-from src.app.models import UserWithID
+from src.app.models import UserWithID, PostWithID
 from src.redis.util import RedisKeys
 
 
@@ -58,4 +58,27 @@ class RedisAdminClient:
         user_data = self.client.hgetall(RedisKeys.user(username))
         return UserWithID.model_validate(user_data) if user_data else None
     
+    def get_user_followers(self, username: str) -> list[str]:
+        return self.client.zrange(
+            RedisKeys.user_followers(username), 0, -1
+        )   # type: ignore
+    
+    def add_post(self, post: PostWithID):
+        # Add post data
+        self.client.set(RedisKeys.post(post.post_id), post.model_dump_json())
+
+        # Add post to the posts of author
+        self.client.zadd(RedisKeys.user_posts(post.author), {str(post.post_id): post.post_id})
+
+        # Add post to the feeds of author followers
+        followers: list[str] = self.client.zrange(RedisKeys.user_followers(post.author), 0, -1) # type: ignore
+        for follower in followers:
+            self.client.zadd( RedisKeys.user_feed(follower), {str(post.post_id): post.post_id})
+
+    
+    def get_user_feed(self, username: str) -> list[int]:
+        str_post_ids: list[str] = self.client.zrange(
+            RedisKeys.user_feed(username), 0, -1
+        )   # type: ignore
+        return [int(post_id) for post_id in str_post_ids]
 

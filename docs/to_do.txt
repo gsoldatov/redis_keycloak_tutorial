@@ -173,23 +173,44 @@ x limit scope to app_client when logging in;
         + run all validation tests against Pydantic models + run a single route test for check if validation works;
     
     // adds a user follower
-    - PUT /users/:username/followers/:follower_id:
-        - validates user token:
-            - returns 401, if token does not exist;
-            - retuns 403, if token was issued for another user;
-        - adds `follower_id` to the followers sorted set of `username`;
-        - adds posts of `username` to the feed of `follower_id`;
-        - returns 404 if `username` or `follower_id` does not exist;
+    + PUT /users/:username/followers/:follower:
+        + validates user token:
+            + returns 401, if token does not exist;
+            + returns 401, if token does not have a username attribute;
+            + retuns 403, if token was not issued for `follower`;
+        + returns 404 if `username` or `follower` does not exist;
+        + adds `follower` to the followers sorted set of `username`;
+        + adds posts of `username` to the feed of `follower`;
+    
+    + PUT /users/:username/followers/:follower:
+        + keycloak network exception;
+        + redis network exception;
+        + validation is triggered;
+        + invalid access token;
+        + valid token of another user;
+        + non-existing followed username;
+        + self-following is not allowed;
+        + valid follower add operation (followers set):
+            + create 3 users;
+            + add 2nd & 3rd as followers of 1st;
+            + check if responses have correct code;
+            + check if 1st user has 2 followers in the database;
+        + valid follower add operation (follower feed);
+            + create 4 users;
+            + create posts for 2nd, 3rd & 4th users;
+            + add 1st user as a follower of 2nd and 3rd;
+            + check if responses have correct code;
+            + check feed of 1st user contains posts of 2nd and 3rd;
     
     // removes a user follower
-    - DELETE /users/:username/followers/:follower_id:
+    - DELETE /users/:username/followers/:follower:
         - validates user token:
             - returns 401, if token does not exist;
             - retuns 403, if token was issued for another user;
-        - removes `follower_id` from the followers sorted set of `username`;
-        - removes posts of `username` from the feed of `follower_id`;
+        - removes `follower` from the followers sorted set of `username`;
+        - removes posts of `username` from the feed of `follower`;
         - returns 404 if `username` does not exist;
-        - retunrs 200 if `follower_id` does not exist;
+        - retunrs 200 if `follower` does not exist;
     
     // returns paginated user followers
     - GET /users/:username/followers:
