@@ -1,10 +1,30 @@
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, model_validator
-from typing import Annotated, Self
+from datetime import datetime
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, model_validator, \
+    PlainValidator, PlainSerializer
+from typing import Annotated, Self, Any
 
 
 Username = Annotated[str, Field(min_length=8, max_length=32)]
 Password = Annotated[str, Field(min_length=8, max_length=32)]
 Name = Annotated[str, Field(min_length=1, max_length=64)]
+
+# Datetime
+def validate_datetime(value: Any) -> datetime:
+    """
+    Custom validator for the `Datetime` type, which allows ISO-formatted strings.
+    """
+    if isinstance(value, datetime): return value
+    elif isinstance(value, str): return datetime.fromisoformat(value)
+    else: raise ValueError("Input should be a valid datetime")
+
+
+Datetime = Annotated[
+    datetime,
+    # Field(strict=False),    # allow converting from strings 
+    #                         # (NOTE: this does not work in type unions with strict mode enabled)
+    PlainValidator(validate_datetime),
+    PlainSerializer(lambda x: x.isoformat(), when_used="always")
+]
 
 
 class Base(BaseModel):
@@ -44,3 +64,13 @@ class UserRegistrationCredentials(User):
         if self.password != self.password_repeat:
             raise ValueError("Passwords do not match")
         return self
+
+
+class Post(Base):
+    created_at: Datetime
+    content: str = Field(max_length=1000)
+    author: Username
+
+
+class PostWithID(Post):
+    post_id: int = Field(ge=1)

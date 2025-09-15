@@ -3,7 +3,7 @@ from functools import wraps
 from redis.asyncio import Redis
 from redis.exceptions import BusyLoadingError, ConnectionError, TimeoutError
 
-from src.app.models import User, UserPublic
+from src.app.models import User, UserPublic, PostWithID
 from src.exceptions import RedisConnectionException
 from src.redis.util import RedisKeys
 
@@ -44,7 +44,34 @@ class RedisClient:
     @handle_redis_connection_errors
     async def get_user(self, username: str) -> UserPublic | None:
         """ Returns public attributes of a user with provided `username`, if he exists. """
-        print("IN get_user")
         user_data = await self.client.hgetall(RedisKeys.user(username)) # type: ignore
-        print(f"user_data = {user_data}")
         return UserPublic.model_validate(user_data) if user_data else None
+
+    @handle_redis_connection_errors
+    async def add_follower(self, username: str, follower: str) -> None:
+        """ Adds a `follower` to the followers sorted set of a `username`. """
+        await self.client.zadd(
+            RedisKeys.user_followers(username),
+            {follower: 0}
+        ) # type: ignore
+    
+    @handle_redis_connection_errors
+    async def get_user_post_ids(self, username: str) -> list[str]:
+        """ Returns a list of post IDs authored by `username`. """
+        return await self.client.zrange(RedisKeys.user_posts(username), 0, -1)  # type: ignore
+    
+    # @handle_redis_connection_errors
+    # async def get_user_posts(self, username: str) -> list[PostWithID]:
+    #     """ Returns a list of posts authored by `username`. """
+    #     post_ids = await self.client.lrange(RedisKeys.user_posts(username), 0, -1)  # type: ignore
+    #     if not post_ids: return []
+
+    #     keys = (RedisKeys.post(post_id) for post_id in post_ids)
+    #     return [PostWithID.model_validate_json(value) for value in await self.client.mget(keys)]
+    
+    @handle_redis_connection_errors
+    async def add_post_ids_to_feed(self, username: str, post_ids: list[int] | list[str]) -> None:
+        """ Adds `post_ids` to the feed of a user with `username`. """
+        if not post_ids: return
+        added_posts = {str(post_id): int(post_id) for post_id in post_ids}
+        await self.client.zadd( RedisKeys.user_feed(username), added_posts)
