@@ -59,6 +59,14 @@ async def get_refreshed_token(
     return new_tokens["access_token"]
 
 
+async def get_decoded_token(
+    access_token: Annotated[str, Depends(get_refreshed_token)],
+    keycloak_client: Annotated[KeycloakClient, Depends(get_keycloak_client)]
+) -> dict:
+    """ Gets decoded access_token sent via request headers. """
+    return await keycloak_client.decode_token(access_token, validate=False)
+
+
 def validate_token_role(role: str):
     """
     Ensures that the current access_token (sent via request or refreshed)
@@ -71,7 +79,7 @@ def validate_token_role(role: str):
     ) -> None:
         config: Config = request.app.state.config
 
-        token_data = await keycloak_client.decode_token(access_token)
+        token_data = await keycloak_client.decode_token(access_token, validate=False)
         resource_roles = token_data\
             .get("resource_access", {})\
             .get(config.keycloak.app_client_id, {})\

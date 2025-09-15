@@ -119,10 +119,10 @@ class KeycloakClient:
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
             raise UnauthorizedOperationException("User session expired or do not exist.") from e
 
-    async def decode_token(self, access_token: str) -> dict:
+    async def decode_token(self, access_token: str, validate: bool = True) -> dict:
         """ Decodes the access token and returns its contents. """
         try:
-            return await self.client.a_decode_token(access_token)
+            return await self.client.a_decode_token(access_token, validate=validate)
         except KeycloakConnectionError as e:
             raise KeycloakConnectionException from e
         except (KeycloakAuthenticationError, KeycloakPostError) as e:
