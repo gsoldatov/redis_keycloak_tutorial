@@ -56,6 +56,14 @@ class RedisClient:
         ) # type: ignore
     
     @handle_redis_connection_errors
+    async def remove_follower(self, username: str, follower: str) -> None:
+        """ Removes a `follower` from the followers sorted set of a `username`. """
+        await self.client.zrem(
+            RedisKeys.user_followers(username),
+            follower
+        ) # type: ignore
+    
+    @handle_redis_connection_errors
     async def get_user_post_ids(self, username: str) -> list[str]:
         """ Returns a list of post IDs authored by `username`. """
         return await self.client.zrange(RedisKeys.user_posts(username), 0, -1)  # type: ignore
@@ -73,5 +81,12 @@ class RedisClient:
     async def add_post_ids_to_feed(self, username: str, post_ids: list[int] | list[str]) -> None:
         """ Adds `post_ids` to the feed of a user with `username`. """
         if not post_ids: return
-        added_posts = {str(post_id): int(post_id) for post_id in post_ids}
-        await self.client.zadd( RedisKeys.user_feed(username), added_posts)
+        added_post_ids = {str(post_id): int(post_id) for post_id in post_ids}
+        await self.client.zadd( RedisKeys.user_feed(username), added_post_ids)
+    
+    @handle_redis_connection_errors
+    async def remove_post_ids_from_feed(self, username: str, post_ids: list[int] | list[str]) -> None:
+        """ Removes `post_ids` from the feed of a user with `username`. """
+        if not post_ids: return
+        removed_post_ids = [str(post_id) for post_id in post_ids]
+        await self.client.zrem( RedisKeys.user_feed(username), *removed_post_ids)

@@ -58,6 +58,16 @@ class RedisAdminClient:
         user_data = self.client.hgetall(RedisKeys.user(username))
         return UserWithID.model_validate(user_data) if user_data else None
     
+    def add_user_follower(self, username: str, follower: str) -> None:
+        # Add follower to the followers list
+        self.client.zadd(RedisKeys.user_followers(username), {follower: 0})
+
+        # Add username's posts to the followers feed
+        user_post_ids: list[str] = self.client.zrange(RedisKeys.user_posts(username), 0, -1)    # type: ignore
+        if user_post_ids:
+            added_post_ids = {str(post_id): int(post_id) for post_id in user_post_ids}
+            self.client.zadd(RedisKeys.user_feed(follower), added_post_ids)
+    
     def get_user_followers(self, username: str) -> list[str]:
         return self.client.zrange(
             RedisKeys.user_followers(username), 0, -1
@@ -74,7 +84,6 @@ class RedisAdminClient:
         followers: list[str] = self.client.zrange(RedisKeys.user_followers(post.author), 0, -1) # type: ignore
         for follower in followers:
             self.client.zadd( RedisKeys.user_feed(follower), {str(post.post_id): post.post_id})
-
     
     def get_user_feed(self, username: str) -> list[int]:
         str_post_ids: list[str] = self.client.zrange(

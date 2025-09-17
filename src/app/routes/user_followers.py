@@ -50,3 +50,44 @@ async def add_follower(
     await redis_client.add_post_ids_to_feed(follower, post_ids)
 
     raise HTTPException(status_code=200)
+
+
+@user_followers_router.delete("/{username}/followers/{follower}")
+async def remove_follower(
+    username: Username,
+    follower: Username,
+    decoded_token: Annotated[dict, Depends(get_decoded_token)],
+    redis_client: Annotated[RedisClient, Depends(get_redis_client)]
+):
+    # Validate token username
+    # NOTE: username is not currently returned in the access token
+    if (token_username := decoded_token.get("preferred_username", None)) is None:
+        raise HTTPException(401, detail="Invalid token format: missing username.")
+    elif token_username != follower:
+        raise HTTPException(403, detail="Cannot add a follower to another user.")
+    
+    # Check if both username and follower exist
+    user, follower_user = await asyncio.gather(
+        redis_client.get_user(username),
+        redis_client.get_user(follower)
+    )
+    
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if follower_user is None:
+        raise HTTPException(status_code=404, detail="Follower user not found.")
+    
+    # Forbid self-following
+    if username == follower:
+        raise HTTPException(status_code=400, detail="Self-following is not allowed.")
+    
+    # Remove a follower
+    await redis_client.remove_follower(username, follower)
+
+    # Get user's post IDs
+    post_ids = await redis_client.get_user_post_ids(username)
+
+    # Remove user's post IDs from the follower's feed
+    await redis_client.remove_post_ids_from_feed(follower, post_ids)
+
+    raise HTTPException(status_code=200)
