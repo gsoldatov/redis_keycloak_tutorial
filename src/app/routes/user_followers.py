@@ -1,9 +1,10 @@
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse
 from typing import Annotated
 
 from src.app.dependencies import get_keycloak_client, get_redis_client, get_refreshed_token, get_decoded_token
-from src.app.models import Username
+from src.app.models import Username, PaginationCursor
 from src.keycloak.client import KeycloakClient
 from src.redis.client import RedisClient
 
@@ -50,6 +51,34 @@ async def add_follower(
     await redis_client.add_post_ids_to_feed(follower, post_ids)
 
     raise HTTPException(status_code=200)
+
+
+@user_followers_router.get("/{username}/followers")
+async def get_followers(
+    username: Username,
+    redis_client: Annotated[RedisClient, Depends(get_redis_client)],
+    last_viewed: Annotated[PaginationCursor | None, Query()] = None
+):
+    # Check if user exists
+    user = await redis_client.get_user(username)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    followers = await redis_client.get_user_followers(username, last_viewed)
+    if not followers:
+        raise HTTPException(status_code=404, detail="Followers not found.")
+    return JSONResponse(content={"followers": followers})
+    
+    # # Add a follower
+    # await redis_client.add_follower(username, follower)
+
+    # # Get user's post IDs
+    # post_ids = await redis_client.get_user_post_ids(username)
+
+    # # Add user's post IDs to the follower's feed
+    # await redis_client.add_post_ids_to_feed(follower, post_ids)
+
+    # raise HTTPException(status_code=200)
 
 
 @user_followers_router.delete("/{username}/followers/{follower}")

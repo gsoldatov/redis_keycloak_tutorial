@@ -7,6 +7,7 @@ from typing import Annotated, Self, Any
 Username = Annotated[str, Field(min_length=8, max_length=32)]
 Password = Annotated[str, Field(min_length=8, max_length=32)]
 Name = Annotated[str, Field(min_length=1, max_length=64)]
+PaginationCursor = Annotated[int, Field(ge=0, le=2**31 - 1)]
 
 # Datetime
 def validate_datetime(value: Any) -> datetime:

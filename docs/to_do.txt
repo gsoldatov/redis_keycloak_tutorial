@@ -228,11 +228,23 @@ x limit scope to app_client when logging in;
             + valid follower remove operation (follower feed);
     
     // returns paginated user followers
-    - GET /users/:username/followers:
-        - gets starting post from URL params;
-        - returns 404 if `username` does not exist;
-        - returns a paginated list of followers of `username`;
-        - returns pagination info (total followers, next & prev pages);
+    + GET /users/:username/followers:
+        + gets optional `last_viewed` integer URL param;
+        + returns 404 if `username` does not exist;
+        + returns a paginated list of followers of `username`:
+            + starting after `last_viewed`, if provided;
+            + from the start of the list, if not;
+            + returns 404 if no followers were found;
+        
+        + tests:
+            + redis network exception;
+            + `username` & `last_viewed` validation;
+            + non-existing `username`;
+            + empty follower list without `last_viewed`;
+            + empty follower list with `last_viewed`;
+            + follower list without `list_viewed`;
+            + follower list with `list_viewed`;
+            + follower list without `list_viewed` > number of followers;
     
     // adds a new post of a user
     - POST /users/:username/posts:

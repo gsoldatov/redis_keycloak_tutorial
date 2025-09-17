@@ -56,6 +56,12 @@ class RedisClient:
         ) # type: ignore
     
     @handle_redis_connection_errors
+    async def get_user_followers(self, username: str, last_viewed: int | None) -> list[str]:
+        start = last_viewed + 1 if last_viewed is not None else 0
+        end = start + 4    # 5 per page
+        return await self.client.zrange(RedisKeys.user_followers(username), start, end)
+    
+    @handle_redis_connection_errors
     async def remove_follower(self, username: str, follower: str) -> None:
         """ Removes a `follower` from the followers sorted set of a `username`. """
         await self.client.zrem(
