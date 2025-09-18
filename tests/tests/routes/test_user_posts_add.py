@@ -25,9 +25,9 @@ async def test_keycloak_network_error(
 
 
 async def test_redis_network_error(
-        data_generator: DataGenerator,
-        keycloak_admin_client: KeycloakAdminClient,
-        cli_no_redis: AsyncClient
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient,
+    cli_no_redis: AsyncClient
 ):
     # Add a user to Keycloak
     user_id = keycloak_admin_client.add_user()
@@ -86,9 +86,9 @@ async def test_invalid_token(
 
 
 async def test_token_of_another_user(
-        data_generator: DataGenerator,
-        keycloak_admin_client: KeycloakAdminClient,
-        cli: AsyncClient
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient,
+    cli: AsyncClient
 ):
     # Add users to Keycloak
     keycloak_admin_client.add_user(username="first_user")
@@ -110,10 +110,10 @@ async def test_token_of_another_user(
 
 
 async def test_add_posts_response_and_posts_data(
-        data_generator: DataGenerator,
-        keycloak_admin_client: KeycloakAdminClient,
-        redis_admin_client: RedisAdminClient,
-        cli: AsyncClient
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient,
+    redis_admin_client: RedisAdminClient,
+    cli: AsyncClient
 ):
     # Add a user
     keycloak_admin_client.add_user()
@@ -153,10 +153,10 @@ async def test_add_posts_response_and_posts_data(
 
 
 async def test_add_posts_author_post_ids(
-        data_generator: DataGenerator,
-        keycloak_admin_client: KeycloakAdminClient,
-        redis_admin_client: RedisAdminClient,
-        cli: AsyncClient
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient,
+    redis_admin_client: RedisAdminClient,
+    cli: AsyncClient
 ):
     # Add a user
     keycloak_admin_client.add_user()
@@ -183,10 +183,10 @@ async def test_add_posts_author_post_ids(
 
 
 async def test_add_posts_followers_feeds(
-        data_generator: DataGenerator,
-        keycloak_admin_client: KeycloakAdminClient,
-        redis_admin_client: RedisAdminClient,
-        cli: AsyncClient
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient,
+    redis_admin_client: RedisAdminClient,
+    cli: AsyncClient
 ):
     # Add users
     first_followed, second_followed = "first_followed", "second_followed"
