@@ -81,6 +81,12 @@ class RedisClient:
         
         # Return ID of new post
         return added_post
+
+    @handle_redis_connection_errors
+    async def get_post(self, post_id: int) -> PostWithID | None:
+        """ Returns a post with the provided `post_id`, if it exists. """
+        post_data = await self.client.get(RedisKeys.post(post_id))
+        return PostWithID.model_validate_json(post_data) if post_data else None
     
     @handle_redis_connection_errors
     async def get_user_post_ids(self, username: str) -> list[str]:

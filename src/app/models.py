@@ -8,6 +8,7 @@ Username = Annotated[str, Field(min_length=8, max_length=32)]
 Password = Annotated[str, Field(min_length=8, max_length=32)]
 Name = Annotated[str, Field(min_length=1, max_length=64)]
 PaginationCursor = Annotated[int, Field(ge=0, le=2**31 - 1)]
+PostID = Annotated[int, Field(ge=1, le=2**31 - 1)]
 
 # Datetime
 def validate_datetime(value: Any) -> datetime:
@@ -76,4 +77,4 @@ class Post(NewPost):
 
 
 class PostWithID(Post):
-    post_id: int = Field(ge=1)
+    post_id: PostID

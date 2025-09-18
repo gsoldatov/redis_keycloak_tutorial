@@ -266,10 +266,16 @@ x limit scope to app_client when logging in;
             + add posts (posts are properly added to the followers feeds);
     
     // Returns a post
-    - GET /posts/:post_id:
-        - validates post_id;
-        - returns 404 if a post does not exist;
-        - returns a post, if it exists;
+    + GET /posts/:post_id:
+        + validates post_id;
+        + returns 404 if a post does not exist;
+        + returns a post, if it exists;
+
+        + tests:
+            + redis network error;
+            + post_id validation;
+            + non-existing post;
+            + existing post;
     
     // returns paginated posts of user
     - GET /users/:username/posts:
