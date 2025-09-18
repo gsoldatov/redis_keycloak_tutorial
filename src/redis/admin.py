@@ -85,6 +85,16 @@ class RedisAdminClient:
         for follower in followers:
             self.client.zadd( RedisKeys.user_feed(follower), {str(post.post_id): post.post_id})
     
+    def get_posts(self, post_ids: list[int]) -> list[PostWithID]:
+        keys = [RedisKeys.post(post_id) for post_id in post_ids]
+        posts_json: list[str] = self.client.mget(keys)  # type: ignore
+        return [PostWithID.model_validate_json(post) for post in posts_json]
+
+    def get_next_post_id(self) -> int:
+        return int(
+            self.client.get(RedisKeys.next_post_id) # type: ignore
+        )
+    
     def get_user_feed(self, username: str) -> list[int]:
         str_post_ids: list[str] = self.client.zrange(
             RedisKeys.user_feed(username), 0, -1

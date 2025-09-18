@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from src.app.models import UserWithID, PostWithID
+from src.app.models import UserWithID, PostWithID, NewPost
 
 
 class AuthGenerator:
@@ -69,6 +69,14 @@ class PostsGenerator:
             content=content,
             author=author
         )
+
+    def new_post_request_body(
+        self,
+        content: str = "post content"
+    ) -> dict:
+        return NewPost(
+            content=content
+        ).model_dump()
 
 class DataGenerator:
     def __init__(self):

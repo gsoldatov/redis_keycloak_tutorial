@@ -3,7 +3,7 @@ from functools import wraps
 from redis.asyncio import Redis
 from redis.exceptions import BusyLoadingError, ConnectionError, TimeoutError
 
-from src.app.models import User, UserPublic, PostWithID
+from src.app.models import User, UserPublic, PostWithID, Post
 from src.exceptions import RedisConnectionException
 from src.redis.util import RedisKeys
 
@@ -70,6 +70,19 @@ class RedisClient:
         ) # type: ignore
     
     @handle_redis_connection_errors
+    async def add_new_post(self, post: Post) -> PostWithID:
+        """ Saves a new post in the database. """
+        # Get post ID of the new post
+        post_id = await self.client.incr(RedisKeys.next_post_id, amount=1)
+        
+        # Set post
+        added_post = PostWithID.model_validate({**post.model_dump(), "post_id": post_id})
+        await self.client.set(RedisKeys.post(post_id), added_post.model_dump_json())
+        
+        # Return ID of new post
+        return added_post
+    
+    @handle_redis_connection_errors
     async def get_user_post_ids(self, username: str) -> list[str]:
         """ Returns a list of post IDs authored by `username`. """
         return await self.client.zrange(RedisKeys.user_posts(username), 0, -1)  # type: ignore
@@ -82,6 +95,16 @@ class RedisClient:
 
     #     keys = (RedisKeys.post(post_id) for post_id in post_ids)
     #     return [PostWithID.model_validate_json(value) for value in await self.client.mget(keys)]
+
+    @handle_redis_connection_errors
+    async def add_post_to_followers_feeds(self, post: PostWithID) -> None:
+        """ Adds a `post` IDs to the feeds of its author's followers. """
+        followers = await self.client.zrange(RedisKeys.user_followers(post.author), 0, -1)
+        if followers:
+            pipe = self.client.pipeline()
+            for follower in followers:
+                pipe.zadd(RedisKeys.user_feed(follower), {str(post.post_id): post.post_id})
+            await pipe.execute()
     
     @handle_redis_connection_errors
     async def add_post_ids_to_feed(self, username: str, post_ids: list[int] | list[str]) -> None:

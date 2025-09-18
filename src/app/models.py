@@ -67,9 +67,11 @@ class UserRegistrationCredentials(User):
         return self
 
 
-class Post(Base):
+class NewPost(Base):
+    content: str = Field(min_length=1, max_length=1000)
+
+class Post(NewPost):
     created_at: Datetime
-    content: str = Field(max_length=1000)
     author: Username
 
 

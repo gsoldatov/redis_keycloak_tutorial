@@ -247,13 +247,29 @@ x limit scope to app_client when logging in;
             + follower list without `list_viewed` > number of followers;
     
     // adds a new post of a user
-    - POST /users/:username/posts:
-        - validates user token:
-            - returns 401, if token does not exist;
-            - retuns 403, if token was issued for another user;
-        - validates user post body;
-        - adds the post to the list of user posts;
-        - adds the post to the feeds of user's followers;
+    + POST /users/:username/posts:
+        + validates user token:
+            + returns 401, if token does not exist;
+            + returns 403, if token was issued for another user;
+        + validates user post body;
+        + adds the post to the list of user posts;
+        + adds the post to the feeds of user's followers;
+
+        + tests:
+            + post data validation;
+            + keycloak network error;
+            + redis network error;
+            + validation is triggered;
+            + invalid access token;
+            + access token of another user;
+            + add posts (posts are properly saved);
+            + add posts (posts are properly added to the followers feeds);
+    
+    // Returns a post
+    - GET /posts/:post_id:
+        - validates post_id;
+        - returns 404 if a post does not exist;
+        - returns a post, if it exists;
     
     // returns paginated posts of user
     - GET /users/:username/posts:

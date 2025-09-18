@@ -18,3 +18,5 @@ class RedisKeys:
     @staticmethod
     def post(post_id: str | int) -> str:
         return f"post:{post_id}"
+
+    next_post_id = "next_post_id"
