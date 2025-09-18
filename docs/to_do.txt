@@ -252,6 +252,7 @@ x limit scope to app_client when logging in;
             + returns 401, if token does not exist;
             + returns 403, if token was issued for another user;
         + validates user post body;
+        + adds post data;
         + adds the post to the list of user posts;
         + adds the post to the feeds of user's followers;
 
@@ -263,6 +264,7 @@ x limit scope to app_client when logging in;
             + invalid access token;
             + access token of another user;
             + add posts (posts are properly saved);
+            + add posts (post is added to author's posts);
             + add posts (posts are properly added to the followers feeds);
     
     // Returns a post
@@ -279,6 +281,12 @@ x limit scope to app_client when logging in;
     
     // returns paginated posts of user
     - GET /users/:username/posts:
+        - gets optional `last_viewed` integer URL param;
+        - returns 404 if `username` does not exist;
+        - returns a paginated list of posts of `username`:
+            - starting after `last_viewed`, if provided;
+            - from the start of the list, if not;
+            - returns 404 if no followers were found;
         - gets starting post from URL params;
         - returns 404 if $username does not exist;
         - returns a paginated list of user's posts;

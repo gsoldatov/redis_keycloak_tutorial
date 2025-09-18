@@ -75,9 +75,12 @@ class RedisClient:
         # Get post ID of the new post
         post_id = await self.client.incr(RedisKeys.next_post_id, amount=1)
         
-        # Set post
+        # Set post data
         added_post = PostWithID.model_validate({**post.model_dump(), "post_id": post_id})
         await self.client.set(RedisKeys.post(post_id), added_post.model_dump_json())
+
+        # Add post to author's list of posts
+        await self.client.zadd(RedisKeys.user_posts(post.author), {str(post_id): post_id})
         
         # Return ID of new post
         return added_post
@@ -87,6 +90,11 @@ class RedisClient:
         """ Returns a post with the provided `post_id`, if it exists. """
         post_data = await self.client.get(RedisKeys.post(post_id))
         return PostWithID.model_validate_json(post_data) if post_data else None
+
+    # @handle_redis_connection_errors
+    # async def get_paginated_user_posts(self, username: str, last_viewed: int | None) -> list[PostWithID]:
+    #     """ Returns a paginated list of posts of `username` after `last_viewed` or from start. """
+    #     post_ids = await self.client.zrange(RedisKeys.user_posts())
     
     @handle_redis_connection_errors
     async def get_user_post_ids(self, username: str) -> list[str]:

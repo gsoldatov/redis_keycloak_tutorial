@@ -152,6 +152,36 @@ async def test_add_posts_response_and_posts_data(
     assert redis_admin_client.get_next_post_id() == 3
 
 
+async def test_add_posts_author_post_ids(
+        data_generator: DataGenerator,
+        keycloak_admin_client: KeycloakAdminClient,
+        redis_admin_client: RedisAdminClient,
+        cli: AsyncClient
+):
+    # Add a user
+    keycloak_admin_client.add_user()
+    redis_admin_client.set_user(data_generator.users.redis_user_data())
+
+    # Log in as a user
+    body = data_generator.auth.get_auth_login_request_body()
+    login_resp = await cli.post("/auth/login", json=body)
+    
+    assert login_resp.status_code == 200
+    access_token = login_resp.json()["access_token"]
+
+    # Add new posts
+    for i in range(1, 4):
+        headers = data_generator.auth.get_bearer_header(access_token)
+        content = f"post {i}"
+        body = data_generator.posts.new_post_request_body(content=content)
+        resp = await cli.post("/users/username/posts", json=body, headers=headers)
+        
+        assert resp.status_code == 201
+    
+    # Check if user posts have correct post IDs
+    assert redis_admin_client.get_user_post_ids("username") == [1, 2, 3]
+
+
 async def test_add_posts_followers_feeds(
         data_generator: DataGenerator,
         keycloak_admin_client: KeycloakAdminClient,
