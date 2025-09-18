@@ -4,9 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from typing import Annotated
 
-from src.app.dependencies import get_keycloak_client, get_redis_client, get_refreshed_token, get_decoded_token
+from src.app.dependencies import get_redis_client, get_decoded_token
 from src.app.models import Username, NewPost, Post, PaginationCursor
-from src.keycloak.client import KeycloakClient
 from src.redis.client import RedisClient
 
 
@@ -40,3 +39,23 @@ async def add_post(
     
     # Return new post in response
     return JSONResponse(status_code=201, content={"post": post_with_id.model_dump()})
+
+
+@user_posts_router.get("/{username}/posts")
+async def get_posts(
+    username: Username,
+    redis_client: Annotated[RedisClient, Depends(get_redis_client)],
+    last_viewed: Annotated[PaginationCursor | None, Query()] = None
+):
+    # Check if user exists
+    user = await redis_client.get_user(username)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    # Get paginated user posts
+    posts = await redis_client.get_paginated_user_posts(username, last_viewed)
+
+    if not posts:
+        raise HTTPException(status_code=404, detail="Posts not found.")
+    
+    return JSONResponse(content={"posts": [post.model_dump() for post in posts]})

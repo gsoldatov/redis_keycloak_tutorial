@@ -58,10 +58,11 @@ class PostsGenerator:
         self,
         post_id: int = 1,
         created_at: datetime | None = None,
-        content: str = "post content",
+        content: str | None = None,
         author: str = "username"
     ) -> PostWithID:
         created_at = created_at if created_at is not None else datetime.now(tz=timezone.utc)
+        content = content if content is not None else f"post {post_id} content"
 
         return PostWithID(
             post_id=post_id,

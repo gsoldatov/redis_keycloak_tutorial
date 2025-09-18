@@ -280,17 +280,23 @@ x limit scope to app_client when logging in;
             + existing post;
     
     // returns paginated posts of user
-    - GET /users/:username/posts:
-        - gets optional `last_viewed` integer URL param;
-        - returns 404 if `username` does not exist;
-        - returns a paginated list of posts of `username`:
-            - starting after `last_viewed`, if provided;
-            - from the start of the list, if not;
-            - returns 404 if no followers were found;
-        - gets starting post from URL params;
-        - returns 404 if $username does not exist;
-        - returns a paginated list of user's posts;
-        - returns pagination info (next post ID & total posts);
+    + GET /users/:username/posts:
+        + gets optional `last_viewed` integer URL param;
+        + returns 404 if `username` does not exist;
+        + returns a paginated list of posts of `username`:
+            + starting after `last_viewed`, if provided;
+            + from the start of the list, if not;
+            + returns 404 if no followers were found;
+        
+        + tests:
+            + redis connection error;
+            + username & last_viewed validation;
+            + non-existing username;
+            + posts of a user without posts;
+            + posts of a user with posts;
+    
+    - add role check when adding new user posts & tests for it;
+    - reverse post score, so that newer posts are fetched first;
     
     // returns paginated feed of user
     - GET /users/:username/feed:
@@ -307,6 +313,7 @@ x limit scope to app_client when logging in;
     - id_next_post: ID of next created post;
     - post:$post_id: data of $post_id;
 
+- move Redis client methods into nested attributes;
 ? move access/refresh tokens store to Redis;
 
 - allow logging in only via email (forbid using username) & add tests;
