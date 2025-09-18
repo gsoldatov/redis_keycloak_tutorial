@@ -58,8 +58,8 @@ async def test_validation(
     
     assert login_resp.status_code == 200
     access_token = login_resp.json()["access_token"]
-    # Username validation
 
+    # Username validation
     headers = data_generator.auth.get_bearer_header(access_token)
     resp = await cli_no_redis.put("/users/a/followers/follower", headers=headers)
     assert resp.status_code == 422
