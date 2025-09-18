@@ -64,7 +64,7 @@ async def get_followers(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found.")
     
-    followers = await redis_client.get_user_followers(username, last_viewed)
+    followers = await redis_client.get_paginated_user_followers(username, last_viewed)
     if not followers:
         raise HTTPException(status_code=404, detail="Followers not found.")
     return JSONResponse(content={"followers": followers})
