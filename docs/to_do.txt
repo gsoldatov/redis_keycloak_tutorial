@@ -300,42 +300,30 @@ x limit scope to app_client when logging in;
     + reverse post score, so that newer posts are fetched first;
     
     // returns paginated feed of user
-    - GET /users/:username/feed:
-        - gets a starting post from URL params;
-        - returns 404 if $username does not exist;
-        - returns a paginated list of posts in user's feed;
-        - returns pagination info (next post ID & total posts);
+    + GET /users/:username/feed:
+        + gets optional `last_viewed` integer URL param;
+        + returns 404 if `username` does not exist;
+        + returns a paginated list of posts of `username`:
+            + starting after `last_viewed`, if provided;
+            + from the start of the list, if not;
+            + returns 404 if no followers were found;
+        
+        + tests:
+            + redis connection error;
+            + username & last_viewed validation;
+            + non-existing username;
+            + feed without posts;
+            + feed with posts;
 
-- Redis keys & values:
-    - user:$username: hash with data of $username;
-    - user_followers:$username: sorted set with IDs of followers of $username;
-    - user_feed:$username: sorted set with post IDs of users, followed by $username;
-    - user_posts:$username: list of post IDs of $username posts;
-    - id_next_post: ID of next created post;
-    - post:$post_id: data of $post_id;
++ Redis keys & values:
+    + user:$username: hash with data of $username;
+    + user_followers:$username: sorted set with IDs of followers of $username;
+    + user_feed:$username: sorted set with post IDs of users, followed by $username;
+    + user_posts:$username: list of post IDs of $username posts;
+    + id_next_post: ID of next created post;
+    + post:$post_id: data of $post_id;
 
 - move Redis client methods into nested attributes;
 ? move access/refresh tokens store to Redis;
 
 - allow logging in only via email (forbid using username) & add tests;
-
-- tests:
-    ???
-
-- Redis cache:
-    - add tokens on login;
-    - invalidate tokens on logout or expiry;
-    - refresh tokens on valid route calls;
-
-- CLI utility for contains:
-    - add Redis container management;
-
-- tests:
-    - mocks:
-        - test config;
-        - test containers:
-            ? use dev containers with temp databases & realms;
-        - app & client;
-    
-    - tests:
-        ???

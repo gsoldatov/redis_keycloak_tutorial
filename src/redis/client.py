@@ -140,3 +140,15 @@ class RedisClient:
         if not post_ids: return
         removed_post_ids = [str(post_id) for post_id in post_ids]
         await self.client.zrem( RedisKeys.user_feed(username), *removed_post_ids)
+
+    @handle_redis_connection_errors
+    async def get_paginated_user_feed(self, username: str, last_viewed: int | None) -> list[PostWithID]:
+        """ Returns a paginated list of posts from `username`'s feed after `last_viewed` or from start. """
+        start = last_viewed + 1 if last_viewed is not None else 0
+        end = start + 4     # 5 per page
+        post_ids: list[str] = await self.client.zrange(RedisKeys.user_feed(username), start, end)
+        if post_ids:
+            posts_data = await self.client.mget([RedisKeys.post(post_id) for post_id in post_ids])
+            return [PostWithID.model_validate_json(post) for post in posts_data]
+        else:
+            return []
