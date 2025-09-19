@@ -14,7 +14,7 @@ from config import load_config, Config
 from src.app.main import create_app
 
 from src.keycloak.container import get_keycloak_container_manager
-from src.keycloak.admin import KeycloakAdminClient
+from src.keycloak.admin import KeycloakAdminClient, ALL_ROLES
 from src.redis.container import get_redis_container_manager
 from src.redis.admin import RedisAdminClient
 
@@ -115,8 +115,8 @@ def test_keycloak_realm(
 
     keycloak_admin_client.create_app_realm()
     keycloak_admin_client.create_app_client()
-    keycloak_admin_client.add_client_role("role-1")
-    keycloak_admin_client.add_client_role("role-2")
+    for role in ALL_ROLES:
+        keycloak_admin_client.add_client_role(role)
 
     client_representtation = keycloak_admin_client.get_app_client()
 
