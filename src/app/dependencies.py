@@ -74,13 +74,11 @@ def validate_token_role(role: str):
     """
     async def inner(
         request: Request,
-        access_token: Annotated[str, Depends(get_refreshed_token)],
-        keycloak_client: Annotated[KeycloakClient, Depends(get_keycloak_client)]
+        decoded_token: Annotated[dict, Depends(get_decoded_token)]
     ) -> None:
         config: Config = request.app.state.config
 
-        token_data = await keycloak_client.decode_token(access_token, validate=False)
-        resource_roles = token_data\
+        resource_roles = decoded_token\
             .get("resource_access", {})\
             .get(config.keycloak.app_client_id, {})\
             .get("roles", [])
