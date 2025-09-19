@@ -8,6 +8,10 @@ import httpx
 from config import KeycloakConfig
 
 
+ALL_ROLES = ["role-1", "role-2", "can-post"]
+""" Full list of Keycloak app client roles. """
+
+
 def reset_keycloak_app_realm(kc_config: KeycloakConfig):
     """
     Deletes existing app realm, creates a new one 
@@ -29,7 +33,7 @@ def reset_keycloak_app_realm_users(kc_config: KeycloakConfig):
         keycloak_admin_client.delete_users(["first_user", "second_user", "superuser"])
         user_1_id = keycloak_admin_client.add_user("first_user", "password", ["role-1"])
         user_2_id = keycloak_admin_client.add_user("second_user", "password", ["role-2"])
-        superuser_id = keycloak_admin_client.add_user("superuser", "password", ["role-1", "role-2"])
+        superuser_id = keycloak_admin_client.add_user("superuser", "password", ALL_ROLES)
 
 
 def in_app_realm(fn):
@@ -170,7 +174,7 @@ class KeycloakAdminClient:
         self,
         username: str = "username",
         password: str = "password",
-        app_client_roles: list[str] | None = None,
+        app_client_roles: list[str] | None = ALL_ROLES,
         email: str | None = None,
         enabled: bool = True
     ) -> str:
