@@ -251,6 +251,7 @@ x limit scope to app_client when logging in;
         + validates user token:
             + returns 401, if token does not exist;
             + returns 403, if token was issued for another user;
+            + returns 403, if token does not have `can-post` role;
         + validates user post body;
         + adds post data;
         + adds the post to the list of user posts;
@@ -262,6 +263,7 @@ x limit scope to app_client when logging in;
             + redis network error;
             + validation is triggered;
             + invalid access token;
+            + access token without `can-post` role;
             + access token of another user;
             + add posts (posts are properly saved);
             + add posts (post is added to author's posts);
@@ -294,8 +296,7 @@ x limit scope to app_client when logging in;
             + non-existing username;
             + posts of a user without posts;
             + posts of a user with posts;
-    
-    - add role check when adding new user posts & tests for it;
+
     - reverse post score, so that newer posts are fetched first;
     
     // returns paginated feed of user

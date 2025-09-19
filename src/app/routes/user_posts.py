@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from typing import Annotated
 
-from src.app.dependencies import get_redis_client, get_decoded_token
+from src.app.dependencies import get_redis_client, get_decoded_token, validate_token_role
 from src.app.models import Username, NewPost, Post, PaginationCursor
 from src.redis.client import RedisClient
 
@@ -16,6 +16,7 @@ user_posts_router = APIRouter(prefix="/users")
 async def add_post(
     username: Username,
     new_post: NewPost,
+    valid_token: Annotated[None, Depends(validate_token_role("can-post"))],
     decoded_token: Annotated[dict, Depends(get_decoded_token)],
     redis_client: Annotated[RedisClient, Depends(get_redis_client)]
 ):

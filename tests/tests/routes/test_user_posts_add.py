@@ -85,6 +85,28 @@ async def test_invalid_token(
     assert resp.status_code == 401
 
 
+async def test_token_without_can_post_role(
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient,
+    cli_no_redis: AsyncClient
+):
+    # Add a user without can-post role to Keycloak
+    keycloak_admin_client.add_user(app_client_roles=[])
+
+    # Log in as a user
+    body = data_generator.auth.get_auth_login_request_body()
+    login_resp = await cli_no_redis.post("/auth/login", json=body)
+    
+    assert login_resp.status_code == 200
+    access_token = login_resp.json()["access_token"]
+
+    # Try to add a post
+    headers = data_generator.auth.get_bearer_header(access_token)
+    body = data_generator.posts.new_post_request_body()
+    resp = await cli_no_redis.post("/users/username/posts", json=body, headers=headers)
+    assert resp.status_code == 403
+
+
 async def test_token_of_another_user(
     data_generator: DataGenerator,
     keycloak_admin_client: KeycloakAdminClient,
