@@ -297,7 +297,7 @@ x limit scope to app_client when logging in;
             + posts of a user without posts;
             + posts of a user with posts;
 
-    - reverse post score, so that newer posts are fetched first;
+    + reverse post score, so that newer posts are fetched first;
     
     // returns paginated feed of user
     - GET /users/:username/feed:

@@ -201,7 +201,7 @@ async def test_add_posts_author_post_ids(
         assert resp.status_code == 201
     
     # Check if user posts have correct post IDs
-    assert redis_admin_client.get_user_post_ids("username") == [1, 2, 3]
+    assert redis_admin_client.get_user_post_ids("username") == [3, 2, 1]
 
 
 async def test_add_posts_followers_feeds(
@@ -241,8 +241,8 @@ async def test_add_posts_followers_feeds(
             assert resp.status_code == 201
     
     # Check if posts were added to the followers' feeds correctly
-    assert redis_admin_client.get_user_feed(first_follower) == [1, 2, 3, 4]
-    assert redis_admin_client.get_user_feed(second_follower) == [1, 2]
+    assert redis_admin_client.get_user_feed(first_follower) == [4, 3, 2, 1]
+    assert redis_admin_client.get_user_feed(second_follower) == [2, 1]
 
 
 if __name__ == "__main__":

@@ -216,8 +216,7 @@ async def test_add_followers_follower_feed(
     
     # Check if posts of followed users were added to the feed of the follower
     # and are ordered by their IDs
-    assert redis_admin_client.get_user_feed(follower) == [1, 2, 4, 5]
-    # assert sorted(redis_admin_client.get_user_followers(followed)) == [first_followed, second_followed]
+    assert redis_admin_client.get_user_feed(follower) == [5, 4, 2, 1]
 
 
 if __name__ == "__main__":

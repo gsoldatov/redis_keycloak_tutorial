@@ -6,7 +6,7 @@ from typing import Self
 
 from config import RedisConfig
 from src.app.models import UserWithID, PostWithID
-from src.redis.util import RedisKeys
+from src.redis.util import RedisKeys, get_post_id_mapping
 
 
 class RedisAdminClient:
@@ -65,8 +65,7 @@ class RedisAdminClient:
         # Add username's posts to the followers feed
         user_post_ids: list[str] = self.client.zrange(RedisKeys.user_posts(username), 0, -1)    # type: ignore
         if user_post_ids:
-            added_post_ids = {str(post_id): int(post_id) for post_id in user_post_ids}
-            self.client.zadd(RedisKeys.user_feed(follower), added_post_ids)
+            self.client.zadd(RedisKeys.user_feed(follower), get_post_id_mapping(user_post_ids))
     
     def get_user_followers(self, username: str) -> list[str]:
         return self.client.zrange(
@@ -78,12 +77,12 @@ class RedisAdminClient:
         self.client.set(RedisKeys.post(post.post_id), post.model_dump_json())
 
         # Add post to the posts of author
-        self.client.zadd(RedisKeys.user_posts(post.author), {str(post.post_id): post.post_id})
+        self.client.zadd(RedisKeys.user_posts(post.author), get_post_id_mapping(post.post_id))
 
         # Add post to the feeds of author followers
         followers: list[str] = self.client.zrange(RedisKeys.user_followers(post.author), 0, -1) # type: ignore
         for follower in followers:
-            self.client.zadd( RedisKeys.user_feed(follower), {str(post.post_id): post.post_id})
+            self.client.zadd( RedisKeys.user_feed(follower), get_post_id_mapping(post.post_id))
     
     def get_user_post_ids(self, username: str) -> list[int]:
         return [

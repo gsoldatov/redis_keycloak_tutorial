@@ -1,3 +1,5 @@
+from typing import cast
+
 class RedisKeys:
     @staticmethod
     def user(username: str) -> str:
@@ -20,3 +22,11 @@ class RedisKeys:
         return f"post:{post_id}"
 
     next_post_id = "next_post_id"
+
+
+def get_post_id_mapping(post_ids: list[int] | list[str] | int | str):
+    """ Returns a mapping for provided `post_ids` to be inserted into a sorted set. """
+    if not isinstance(post_ids, list):
+        post_ids = [post_ids]   # type: ignore
+    post_ids = cast(list[int] | list[str], post_ids)
+    return {str(post_id): -int(post_id) for post_id in post_ids}

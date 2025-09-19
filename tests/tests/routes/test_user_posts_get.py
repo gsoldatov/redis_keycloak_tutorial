@@ -80,10 +80,10 @@ async def test_user_with_posts(
     assert resp.status_code == 200
 
     response_posts = resp.json()["posts"]
-    assert [post["post_id"] for post in response_posts] == [1, 2, 3, 4, 5]
+    assert [post["post_id"] for post in response_posts] == [10, 9, 8, 7, 6]
 
     # Check response post attributes
-    post = posts[0]
+    post = posts[-1]
     assert post.post_id == response_posts[0]["post_id"]
     assert post.author == response_posts[0]["author"]
     assert post.content == response_posts[0]["content"]
@@ -93,7 +93,7 @@ async def test_user_with_posts(
     resp = await cli.get("/users/username/posts", params={"last_viewed": 5})
     assert resp.status_code == 200
     response_posts = resp.json()["posts"]
-    assert [post["post_id"] for post in response_posts] == [7, 8, 9, 10]
+    assert [post["post_id"] for post in response_posts] == [4, 3, 2, 1]
 
     # Get posts with offset > number of posts
     resp = await cli.get("/users/username/posts", params={"last_viewed": 10})

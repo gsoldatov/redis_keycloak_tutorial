@@ -5,7 +5,7 @@ from redis.exceptions import BusyLoadingError, ConnectionError, TimeoutError
 
 from src.app.models import User, UserPublic, PostWithID, Post
 from src.exceptions import RedisConnectionException
-from src.redis.util import RedisKeys
+from src.redis.util import RedisKeys, get_post_id_mapping
 
 
 REDIS_LIB_CONNECTION_EXCEPTIONS = (BusyLoadingError, ConnectionError, TimeoutError)
@@ -80,7 +80,7 @@ class RedisClient:
         await self.client.set(RedisKeys.post(post_id), added_post.model_dump_json())
 
         # Add post to author's list of posts
-        await self.client.zadd(RedisKeys.user_posts(post.author), {str(post_id): post_id})
+        await self.client.zadd(RedisKeys.user_posts(post.author), get_post_id_mapping(post_id))
         
         # Return ID of new post
         return added_post
@@ -123,16 +123,16 @@ class RedisClient:
         followers = await self.client.zrange(RedisKeys.user_followers(post.author), 0, -1)
         if followers:
             pipe = self.client.pipeline()
+            post_id_mapping = get_post_id_mapping(post.post_id)
             for follower in followers:
-                pipe.zadd(RedisKeys.user_feed(follower), {str(post.post_id): post.post_id})
+                pipe.zadd(RedisKeys.user_feed(follower), post_id_mapping)
             await pipe.execute()
     
     @handle_redis_connection_errors
     async def add_post_ids_to_feed(self, username: str, post_ids: list[int] | list[str]) -> None:
         """ Adds `post_ids` to the feed of a user with `username`. """
         if not post_ids: return
-        added_post_ids = {str(post_id): int(post_id) for post_id in post_ids}
-        await self.client.zadd( RedisKeys.user_feed(username), added_post_ids)
+        await self.client.zadd( RedisKeys.user_feed(username), get_post_id_mapping(post_ids))
     
     @handle_redis_connection_errors
     async def remove_post_ids_from_feed(self, username: str, post_ids: list[int] | list[str]) -> None:

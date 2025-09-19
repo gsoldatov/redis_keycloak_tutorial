@@ -255,7 +255,7 @@ async def test_remove_followers_follower_feed(
         assert resp.status_code == 200
     
     # Check if posts of unfollowed users were correctly removed from the follower's feed
-    assert redis_admin_client.get_user_feed(follower) == [3, 6]
+    assert redis_admin_client.get_user_feed(follower) == [6, 3]
 
 
 if __name__ == "__main__":
