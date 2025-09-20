@@ -84,7 +84,7 @@ x limit scope to app_client when logging in;
     + add container manager;
     + add to CLI;
 
-- Redis-using routes, tests & misc:
++ Redis-using routes, tests & misc:
     + change routes:
         + add /auth prefix to auth routes;
         + add /misc prefix to test routes;
@@ -337,4 +337,4 @@ x move Redis client methods into nested attributes;
             + /protected_test/first;
             + /protected_test/second;
 
-- allow logging in only via email (forbid using username) & add tests;
++ allow logging in only with username (forbid using email) & add tests;

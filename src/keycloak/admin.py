@@ -111,7 +111,8 @@ class KeycloakAdminClient:
         """ Creates app realm. """
         self.admin.create_realm({
             "realm": self.kc_config.app_realm_name,
-            "enabled": True
+            "enabled": True,
+            "loginWithEmailAllowed": False
         }, skip_exists=True)
     
     def delete_app_realm(self) -> None:

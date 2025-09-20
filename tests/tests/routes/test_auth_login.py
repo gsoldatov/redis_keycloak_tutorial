@@ -87,6 +87,24 @@ async def test_invalid_credentials(
     assert len(keycloak_admin_client.get_user_sessions(user_id)) == 0
 
 
+async def test_login_with_email(
+    cli_no_redis: AsyncClient,
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient
+):
+    # Add a user to Keycloak
+    email="test@example.com"
+    user_id = keycloak_admin_client.add_user("username", "password", email=email)
+
+    # Try to log in with email
+    body = data_generator.auth.get_auth_login_request_body(username=email)
+    resp = await cli_no_redis.post("/auth/login", json=body)
+    assert resp.status_code == 401
+
+    # Check if a session was not created
+    assert len(keycloak_admin_client.get_user_sessions(user_id)) == 0
+
+
 async def test_successful_login(
     cli: AsyncClient,
     app: FastAPI,
