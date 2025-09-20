@@ -1,0 +1,39 @@
+keycloak:
+  # Docker container parameters
+  container_name: redis_keycloak_tutorial_keycloak
+  container_main_port: 15080
+  container_healthcheck_port: 15081
+
+  # Container healthcheck params
+  # (NOTE: first container startup may be slow)
+  max_healthcheck_retries: 100
+  healthcheck_retry_timeout: 1  # in seconds
+
+  # Admin user credentials
+  admin_username: admin
+  admin_password: password
+
+  # App realm & client parameters
+  app_realm_name: app_realm
+  app_client_id: app_client
+  app_client_secret: app_client_secret
+
+redis:
+  # Docker container parameters
+  container_name: redis_keycloak_tutorial_redis
+  container_port: 15082
+
+  # Security settings
+  password: password  # default Redis user password
+
+  # Databases
+  max_databases:  256   # number of Redis databases; must be > number of test files
+                        # (0 is used for development, 1 and above are set in the test configuration for each test)
+  database: 0   # database number, which is used by the app
+
+  # Connection & pool settings 
+  max_connections: 50
+  socket_timeout: 2       # Also used as `socket_connect_timeout`
+  number_of_retries: 3    # Number of retries on network & connection obtaining errors
+  retry_base_time: 0.008  # Minimal retry interval in seconds
+  retry_cap_time: 0.512   # Maximal retry interval in seconds

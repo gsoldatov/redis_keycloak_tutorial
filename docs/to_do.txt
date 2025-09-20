@@ -338,3 +338,6 @@ x move Redis client methods into nested attributes;
             + /protected_test/second;
 
 + allow logging in only with username (forbid using email) & add tests;
+
++ add example config;
++ add readme;
