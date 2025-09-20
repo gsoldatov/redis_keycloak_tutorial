@@ -37,7 +37,7 @@ async def login(
     token_cache: Annotated[TokenCache, Depends(get_token_cache)]
 ):
     tokens = await keycloak_client.login(credentials)
-    token_cache.add(tokens)
+    await token_cache.add(tokens)
     return {"access_token": tokens["access_token"]}
 
 
@@ -50,10 +50,10 @@ async def logout(
     if access_token is None:
         raise HTTPException(status_code=403, detail="Missing bearer token.")
 
-    refresh_token = token_cache.get(access_token)
+    refresh_token = await token_cache.get(access_token)
     if refresh_token is None:
         raise HTTPException(status_code=204)
 
     await keycloak_client.logout(refresh_token)
-    token_cache.pop(access_token)
+    await token_cache.pop(access_token)
     raise HTTPException(status_code=204)

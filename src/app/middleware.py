@@ -5,10 +5,7 @@ from typing import Callable, Awaitable
 
 from src.exceptions import KeycloakConnectionException, RedisConnectionException, \
     InvalidOperationException, UnauthorizedOperationException, ForbiddenOperationException
-
-
-def log(msg: str | Exception) -> None:
-    print(msg)
+from src.util.logging import log
 
 
 async def error_middleware(

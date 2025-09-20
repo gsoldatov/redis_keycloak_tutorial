@@ -13,7 +13,7 @@ from src.keycloak.admin import KeycloakAdminClient
 from tests.data_generators import DataGenerator
 
 
-async def test_network_error(
+async def test_keycloak_network_error(
     cli_no_kc_and_redis: AsyncClient,
     data_generator: DataGenerator
 ):
@@ -22,6 +22,23 @@ async def test_network_error(
     body = data_generator.auth.get_auth_login_request_body()
     resp = await cli_no_kc_and_redis.post("/auth/login", json=body)
     assert resp.status_code == 503
+
+
+async def test_redis_network_error(
+    cli_no_redis: AsyncClient,
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient
+):
+    # Add a user to Keycloak
+    user_id = keycloak_admin_client.add_user()
+
+    # Log in
+    body = data_generator.auth.get_auth_login_request_body()
+    resp = await cli_no_redis.post("/auth/login", json=body)
+    assert resp.status_code == 200
+
+    # Check if a session was created
+    assert len(keycloak_admin_client.get_user_sessions(user_id)) == 1
 
 
 async def test_disabled_user(
@@ -71,8 +88,8 @@ async def test_invalid_credentials(
 
 
 async def test_successful_login(
-    cli_no_redis: AsyncClient,
-    app_no_redis: FastAPI,
+    cli: AsyncClient,
+    app: FastAPI,
     data_generator: DataGenerator,
     keycloak_admin_client: KeycloakAdminClient
 ):
@@ -81,7 +98,7 @@ async def test_successful_login(
 
     # Try to log in
     body = data_generator.auth.get_auth_login_request_body()
-    resp = await cli_no_redis.post("/auth/login", json=body)
+    resp = await cli.post("/auth/login", json=body)
     assert resp.status_code == 200
     data = resp.json()
     access_token = data["access_token"]
@@ -90,7 +107,7 @@ async def test_successful_login(
     assert len(keycloak_admin_client.get_user_sessions(user_id)) == 1
 
     # Check if access/refresh token was cached
-    assert app_no_redis.state.token_cache.contains(access_token)
+    assert await app.state.token_cache.contains(access_token)
 
 
 if __name__ == "__main__":

@@ -36,6 +36,15 @@ class AuthGenerator:
     def get_bearer_header_with_invalid_token(self) -> dict:
         return {"Authorization": f"Bearer {_INVALID_ACCESS_TOKEN}"}
 
+    def get_mock_keycloak_tokens(self) -> dict:
+        """ Returns a mock access/refresh token pair. """
+        return {
+            "access_token": "some_access_token",
+            "refresh_token": "refresh_token",
+            "expires_in": 300,
+            "refresh_expires_in": 1800
+        }
+
 
 class UsersGenerator:
     def redis_user_data(

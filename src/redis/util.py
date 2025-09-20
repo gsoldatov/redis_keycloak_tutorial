@@ -20,6 +20,10 @@ class RedisKeys:
     @staticmethod
     def post(post_id: str | int) -> str:
         return f"post:{post_id}"
+    
+    @staticmethod
+    def access_token(access_token: str) -> str:
+        return f"access_token:{access_token}"
 
     next_post_id = "next_post_id"
 

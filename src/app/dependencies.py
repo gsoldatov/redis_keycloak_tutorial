@@ -49,13 +49,13 @@ async def get_refreshed_token(
         return access_token
     
     # Token is invalid/expired, try to refresh
-    refresh_token = token_cache.pop(access_token)
+    refresh_token = await token_cache.pop(access_token)
     if refresh_token is None:
         raise UnauthorizedOperationException("Invalid or expired token.")
 
     # Refresh token
     new_tokens = await keycloak_client.refresh_token(refresh_token)
-    token_cache.add(new_tokens)
+    await token_cache.add(new_tokens)
     return new_tokens["access_token"]
 
 

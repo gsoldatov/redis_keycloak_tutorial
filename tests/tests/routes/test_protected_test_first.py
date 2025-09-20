@@ -14,19 +14,19 @@ from src.keycloak.admin import KeycloakAdminClient
 from tests.data_generators import DataGenerator
 
 
-async def test_network_error(
-    app_no_kc_and_redis: FastAPI,
-    cli_no_kc_and_redis: AsyncClient,
+async def test_keycloak_network_error(
+    app_no_keycloak: FastAPI,
+    cli_no_keycloak: AsyncClient,
     data_generator: DataGenerator
 ):
     # Add a mock access/refresh token pair
-    tokens = {"access_token": "some access token", "refresh_token": "some refresh token"}
-    app_no_kc_and_redis.state.token_cache.add(tokens)
+    tokens = data_generator.auth.get_mock_keycloak_tokens()
+    await app_no_keycloak.state.token_cache.add(tokens)
 
     # Try to access route, while Keycloak "is unavailable"
     # (by using an app with a wrong Keycloak port)
     headers = data_generator.auth.get_bearer_header(tokens["access_token"])
-    resp = await cli_no_kc_and_redis.get("/protected_test/first", headers=headers)
+    resp = await cli_no_keycloak.get("/protected_test/first", headers=headers)
     assert resp.status_code == 503
 
 
@@ -46,7 +46,35 @@ async def test_invalid_authorization_header_format(
 
 
 async def test_expired_token(
-    app_no_redis: FastAPI,
+    app: FastAPI,
+    cli: AsyncClient,
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient
+):
+    # Add a user to Keycloak
+    user_id = keycloak_admin_client.add_user("username", "password", ["role-1"])
+
+    # Log in as a user
+    body = data_generator.auth.get_auth_login_request_body()
+    login_resp = await cli.post("/auth/login", json=body)
+    
+    assert login_resp.status_code == 200
+    access_token = login_resp.json()["access_token"]
+
+    # Expire token
+    keycloak_admin_client.delete_user_sessions(user_id)
+    assert len(keycloak_admin_client.get_user_sessions(user_id)) == 0
+
+    # Try to access route
+    headers = data_generator.auth.get_bearer_header(access_token)
+    route_resp = await cli.get("/protected_test/first", headers=headers)
+    assert route_resp.status_code == 401
+
+    # Check if token was removed from cache
+    assert not await app.state.token_cache.contains(access_token)
+
+
+async def test_expired_token_with_redis_network_error(
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
     keycloak_admin_client: KeycloakAdminClient
@@ -69,9 +97,6 @@ async def test_expired_token(
     headers = data_generator.auth.get_bearer_header(access_token)
     route_resp = await cli_no_redis.get("/protected_test/first", headers=headers)
     assert route_resp.status_code == 401
-
-    # Check if token was removed from cache
-    assert not app_no_redis.state.token_cache.contains(access_token)
 
 
 async def test_token_without_required_role(
@@ -117,6 +142,33 @@ async def test_valid_token(
 
 
 async def test_valid_token_with_refresh(
+    cli: AsyncClient,
+    data_generator: DataGenerator,
+    keycloak_admin_client: KeycloakAdminClient
+):
+    # Change access token lifetime to 1 sec
+    keycloak_admin_client.update_app_client({"attributes": {"access.token.lifespan": 1}})
+
+    # Add a user to Keycloak
+    user_id = keycloak_admin_client.add_user("username", "password", ["role-1"])
+
+    # Log in as a user
+    body = data_generator.auth.get_auth_login_request_body()
+    login_resp = await cli.post("/auth/login", json=body)
+    
+    assert login_resp.status_code == 200
+    access_token = login_resp.json()["access_token"]
+
+    # Wait for token to expire
+    sleep(2)
+
+    # Try to access route
+    headers = data_generator.auth.get_bearer_header(access_token)
+    route_resp = await cli.get("/protected_test/first", headers=headers)
+    assert route_resp.status_code == 200
+
+
+async def test_valid_token_with_refresh_and_redis_network_error(
     cli_no_redis: AsyncClient,
     data_generator: DataGenerator,
     keycloak_admin_client: KeycloakAdminClient
@@ -135,12 +187,12 @@ async def test_valid_token_with_refresh(
     access_token = login_resp.json()["access_token"]
 
     # Wait for token to expire
-    sleep(1.1)
+    sleep(2)
 
     # Try to access route
     headers = data_generator.auth.get_bearer_header(access_token)
     route_resp = await cli_no_redis.get("/protected_test/first", headers=headers)
-    assert route_resp.status_code == 200
+    assert route_resp.status_code == 401
 
 
 if __name__ == "__main__":

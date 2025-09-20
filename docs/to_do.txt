@@ -323,7 +323,18 @@ x limit scope to app_client when logging in;
     + id_next_post: ID of next created post;
     + post:$post_id: data of $post_id;
 
-- move Redis client methods into nested attributes;
-? move access/refresh tokens store to Redis;
+x move Redis client methods into nested attributes;
+
++ move access/refresh tokens store to Redis:
+    + make token cache async;
+    + add Redis token cache class & replace existing class;
+
+    + tests:
+        + update existing;
+        + simulate redis network exception:
+            + /auth/login;            
+            + /auth/logout;
+            + /protected_test/first;
+            + /protected_test/second;
 
 - allow logging in only via email (forbid using username) & add tests;

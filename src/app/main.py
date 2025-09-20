@@ -14,7 +14,7 @@ from redis.exceptions import BusyLoadingError, ConnectionError, TimeoutError
 from config import load_config, Config
 from src.app.middleware import setup_middleware
 from src.app.routes import setup_routes
-from src.app.tokens import TokenCache
+from src.app.tokens import RedisTokenCache
 
 
 def get_lifespan(config: Config):
@@ -24,9 +24,6 @@ def get_lifespan(config: Config):
         try:
             # Config
             app.state.config = config
-
-            # Refresh token cache
-            app.state.token_cache = TokenCache()
 
             # Setup Redis client
             redis = Redis(
@@ -54,6 +51,9 @@ def get_lifespan(config: Config):
                 retry_on_error=[BusyLoadingError, ConnectionError, TimeoutError]
             )
             app.state.redis = redis
+
+            # Refresh token cache
+            app.state.token_cache = RedisTokenCache(redis)
             
             yield
         
