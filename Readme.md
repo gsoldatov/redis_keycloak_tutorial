@@ -1,5 +1,5 @@
 # Description
-An implementation of a [Twitter clone](redis.io/docs/latest/develop/clients/patterns/twitter-clone/) project from Redis docs 
+An implementation of a [Twitter clone](https://redis.io/docs/latest/develop/clients/patterns/twitter-clone/) project from Redis docs 
 using Python 3.13, FastAPI, Redis as a database and Keycloak as a separate auth service.
 
 Contains a simple API for registering & authenticating users, following other users, adding and viewing posts, as well as users' feeds.
