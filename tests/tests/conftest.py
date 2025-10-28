@@ -1,9 +1,11 @@
 import os
 import sys
+from pathlib import Path
 from uuid import uuid4
 
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
+import filelock
 import pytest
 
 project_root_dir = os.path.abspath(os.path.join(__file__, "../" * 3))
@@ -20,6 +22,14 @@ from src.redis.admin import RedisAdminClient
 
 from tests.data_generators import DataGenerator
 from tests.shared_test_state import SharedTestStateManager
+
+
+# File locks for container fixtures
+_lock_dir = Path(__file__).parent
+_redis_container_lock_path = _lock_dir / "redis_container.lock"
+_keycloak_container_lock_path = _lock_dir / "keycloak_container.lock"
+redis_container_lock = filelock.FileLock(_redis_container_lock_path, timeout=120)
+keycloak_container_lock = filelock.FileLock(_keycloak_container_lock_path, timeout=120)
 
 
 ############ Session-scoped fixtures ############
@@ -39,26 +49,32 @@ def config(
 @pytest.fixture(scope="session")
 def keycloak_container(config: Config):
     manager = get_keycloak_container_manager(config.keycloak, True)
-    if not manager.is_running():
-        manager.run()
-        yield
-        
-        # NOTE: with xdist enabled, fixture is not guaranteed to execute exactly once;
-        # this results is container being stopped prematurely;
-        # a workaround would be to memoize `manager.is_running()` value on first call
-        # (via a file lock, for example), and to retrieve it in the last worker,
-        # which would stop the container, if needed
-        
-        # manager.stop()
-    else:
-        yield
+
+    # Use a lock to avoid multiple attempts to run a container,
+    # if it's not up
+    with keycloak_container_lock:
+        if not manager.is_running():
+            manager.run()
+    
+    yield
+    
+    # NOTE: with xdist enabled, fixture is not guaranteed to execute exactly once;
+    # this results is container being stopped prematurely;
+    # a workaround would be to memoize `manager.is_running()` value on first call
+    # (via a file lock, for example), and to retrieve it in the last worker,
+    # which would stop the container, if needed
 
 
 @pytest.fixture(scope="session")
 def redis_container(config: Config):
     manager = get_redis_container_manager(config.redis, True)
-    if not manager.is_running():
-        manager.run()
+
+    # Use a lock to avoid multiple attempts to run a container,
+    # if it's not up
+    with redis_container_lock:
+        if not manager.is_running():
+            manager.run()
+    
     yield
 
 

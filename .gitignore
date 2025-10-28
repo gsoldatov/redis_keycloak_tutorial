@@ -8,4 +8,4 @@ __pycache__/
 temp/
 
 *shared_test_state.json
-shared_test_state.json.lock
+tests/tests/*.lock
